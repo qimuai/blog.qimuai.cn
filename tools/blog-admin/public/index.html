@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Qimuai Blog 后台</title>
-    <link rel="stylesheet" href="/admin/styles.css?v=20260324a" />
+    <link rel="stylesheet" href="/admin/styles.css?v=20260324b" />
   </head>
   <body>
     <div class="shell">
@@ -55,18 +55,86 @@
 
         <div id="status-banner" class="status-banner" hidden></div>
 
-        <label class="editor-field">
-          <span>文章内容</span>
-          <textarea
-            id="editor-textarea"
-            spellcheck="false"
-            placeholder="这里会显示完整的 Markdown 文件内容"
-            disabled
-          ></textarea>
-        </label>
+        <section class="editor-layout">
+          <section class="meta-panel">
+            <article class="meta-card">
+              <div class="meta-card-header">
+                <div>
+                  <p class="eyebrow">文章信息</p>
+                  <h3>先改标题、日期、标签和摘要</h3>
+                </div>
+                <p class="meta-card-note">这些字段会自动写回 frontmatter，现有的其他配置项会保留。</p>
+              </div>
+
+              <div class="meta-grid">
+                <label class="meta-field meta-field-full">
+                  <span>标题</span>
+                  <input id="meta-title" type="text" placeholder="文章标题" disabled />
+                </label>
+
+                <label class="meta-field">
+                  <span>作者</span>
+                  <input id="meta-author" type="text" placeholder="作者" disabled />
+                </label>
+
+                <label class="meta-field">
+                  <span>发布时间</span>
+                  <input
+                    id="meta-pub-datetime"
+                    type="text"
+                    placeholder="2026-03-24T10:00:00+08:00"
+                    disabled
+                  />
+                </label>
+
+                <label class="meta-field meta-field-full">
+                  <span>标签</span>
+                  <input
+                    id="meta-tags"
+                    type="text"
+                    placeholder="多个标签用英文逗号分隔"
+                    disabled
+                  />
+                </label>
+
+                <label class="meta-field meta-field-full">
+                  <span>摘要</span>
+                  <textarea
+                    id="meta-description"
+                    rows="4"
+                    placeholder="给首页卡片和 SEO 用的摘要"
+                    disabled
+                  ></textarea>
+                </label>
+
+                <label class="meta-checkbox">
+                  <input id="meta-draft" type="checkbox" disabled />
+                  <span>保存为草稿</span>
+                </label>
+
+                <div class="meta-readonly">
+                  <span>Slug</span>
+                  <code id="meta-slug">-</code>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="body-panel">
+            <label class="editor-field">
+              <span>正文 Markdown</span>
+              <textarea
+                id="editor-textarea"
+                spellcheck="false"
+                placeholder="这里填写正文内容，frontmatter 会由上面的表单自动生成"
+                disabled
+              ></textarea>
+            </label>
+          </section>
+        </section>
       </main>
     </div>
 
-    <script type="module" src="/admin/app.js?v=20260324a"></script>
+    <script type="module" src="/admin/app.js?v=20260324b"></script>
   </body>
 </html>

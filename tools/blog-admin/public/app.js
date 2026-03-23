@@ -9,11 +9,124 @@ const createButtonElement = document.getElementById("create-button");
 const saveButtonElement = document.getElementById("save-button");
 const editorTextareaElement = document.getElementById("editor-textarea");
 const openPostLinkElement = document.getElementById("open-post-link");
+const metaTitleElement = document.getElementById("meta-title");
+const metaAuthorElement = document.getElementById("meta-author");
+const metaPubDatetimeElement = document.getElementById("meta-pub-datetime");
+const metaTagsElement = document.getElementById("meta-tags");
+const metaDescriptionElement = document.getElementById("meta-description");
+const metaDraftElement = document.getElementById("meta-draft");
+const metaSlugElement = document.getElementById("meta-slug");
+
 const apiBasePath = "/admin/api/posts";
+const managedFrontmatterFields = ["title", "author", "pubDatetime", "description", "draft"];
+const formElements = [
+  metaTitleElement,
+  metaAuthorElement,
+  metaPubDatetimeElement,
+  metaTagsElement,
+  metaDescriptionElement,
+  metaDraftElement,
+  editorTextareaElement,
+];
 
 let posts = [];
 let selectedPost = null;
-let lastLoadedContent = "";
+let lastSerializedContent = "";
+let preservedFrontmatter = "";
+
+function yamlString(value) {
+  return JSON.stringify(String(value ?? ""));
+}
+
+function splitRawContent(rawContent) {
+  const match = rawContent.match(/^---\n([\s\S]*?)\n---\n?/);
+
+  if (!match) {
+    return { frontmatter: "", body: rawContent };
+  }
+
+  return {
+    frontmatter: match[1],
+    body: rawContent.slice(match[0].length),
+  };
+}
+
+function removeManagedFields(frontmatter) {
+  let sanitized = frontmatter;
+
+  managedFrontmatterFields.forEach(fieldName => {
+    const escapedField = fieldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    sanitized = sanitized.replace(new RegExp(`^${escapedField}:\\s*.*\\n?`, "m"), "");
+  });
+
+  sanitized = sanitized.replace(/^tags:\s*\[(.*)\]\s*\n?/m, "");
+  sanitized = sanitized.replace(/^tags:\s*\n(?:\s*-\s*.*\n?)*/m, "");
+
+  return sanitized.trim();
+}
+
+function parseTagsInput(value) {
+  return value
+    .replaceAll("，", ",")
+    .split(",")
+    .map(tag => tag.trim())
+    .filter(Boolean);
+}
+
+function buildTagsFrontmatter(tags) {
+  if (!tags.length) {
+    return "tags: []";
+  }
+
+  return ["tags:", ...tags.map(tag => `  - ${yamlString(tag)}`)].join("\n");
+}
+
+function serializeCurrentPost() {
+  const title = metaTitleElement.value.trim() || selectedPost?.title || "";
+  const author = metaAuthorElement.value.trim() || selectedPost?.author || "Aaron";
+  const pubDatetime =
+    metaPubDatetimeElement.value.trim() ||
+    selectedPost?.pubDatetime ||
+    new Date().toISOString();
+  const description = metaDescriptionElement.value.trim();
+  const tags = parseTagsInput(metaTagsElement.value);
+  const draft = metaDraftElement.checked;
+  const body = editorTextareaElement.value.replace(/^\n+/, "");
+  const managedFrontmatter = [
+    `title: ${yamlString(title)}`,
+    `author: ${yamlString(author)}`,
+    `pubDatetime: ${yamlString(pubDatetime)}`,
+    `description: ${yamlString(description)}`,
+    buildTagsFrontmatter(tags),
+    `draft: ${draft ? "true" : "false"}`,
+  ];
+  const fullFrontmatter = preservedFrontmatter
+    ? [...managedFrontmatter, preservedFrontmatter].join("\n")
+    : managedFrontmatter.join("\n");
+
+  return body
+    ? `---\n${fullFrontmatter}\n---\n\n${body}`
+    : `---\n${fullFrontmatter}\n---\n`;
+}
+
+function resetEditor() {
+  selectedPost = null;
+  preservedFrontmatter = "";
+  lastSerializedContent = "";
+  editorTitleElement.textContent = "选择左侧文章开始编辑";
+  editorMetaElement.textContent = "支持快捷键 Ctrl/Cmd + S 保存。";
+  openPostLinkElement.href = "https://blog.qimuai.cn";
+  metaTitleElement.value = "";
+  metaAuthorElement.value = "";
+  metaPubDatetimeElement.value = "";
+  metaTagsElement.value = "";
+  metaDescriptionElement.value = "";
+  metaDraftElement.checked = false;
+  metaSlugElement.textContent = "-";
+  editorTextareaElement.value = "";
+  setEditorEnabled(false);
+  updateDirtyState();
+}
 
 function setStatus(message, tone = "info") {
   if (!message) {
@@ -29,7 +142,9 @@ function setStatus(message, tone = "info") {
 }
 
 function setEditorEnabled(enabled) {
-  editorTextareaElement.disabled = !enabled;
+  formElements.forEach(element => {
+    element.disabled = !enabled;
+  });
   saveButtonElement.disabled = !enabled;
 }
 
@@ -54,7 +169,7 @@ function getFilteredPosts() {
 }
 
 function updateDirtyState() {
-  const dirty = selectedPost && editorTextareaElement.value !== lastLoadedContent;
+  const dirty = selectedPost && serializeCurrentPost() !== lastSerializedContent;
   saveButtonElement.textContent = dirty ? "保存并发布" : "已同步";
   saveButtonElement.disabled = !selectedPost || !dirty;
 }
@@ -104,6 +219,32 @@ async function apiFetch(pathname, options = {}) {
   return data;
 }
 
+function populateEditor(post) {
+  const { frontmatter, body } = splitRawContent(post.rawContent);
+
+  selectedPost = post;
+  preservedFrontmatter = removeManagedFields(frontmatter);
+  metaTitleElement.value = post.title || "";
+  metaAuthorElement.value = post.author || "";
+  metaPubDatetimeElement.value = post.pubDatetime || "";
+  metaTagsElement.value = Array.isArray(post.tags) ? post.tags.join(", ") : "";
+  metaDescriptionElement.value = post.description || "";
+  metaDraftElement.checked = Boolean(post.draft);
+  metaSlugElement.textContent = post.slug;
+  editorTextareaElement.value = body;
+  editorTitleElement.textContent = post.title;
+  editorMetaElement.textContent = [
+    post.slug,
+    post.pubDatetime || "未填写发布时间",
+    post.draft ? "当前是草稿" : "已发布文章",
+  ].join(" | ");
+  openPostLinkElement.href = post.publicUrl;
+  setEditorEnabled(true);
+  lastSerializedContent = serializeCurrentPost();
+  updateDirtyState();
+  renderPostList();
+}
+
 async function loadPosts(selectSlug) {
   setStatus("正在刷新文章列表…", "info");
   const data = await apiFetch(apiBasePath);
@@ -125,27 +266,14 @@ async function loadPosts(selectSlug) {
 async function loadPost(slug) {
   setStatus("正在载入文章内容…", "info");
   const data = await apiFetch(`${apiBasePath}/${slug}`);
-  selectedPost = data.post;
-  lastLoadedContent = data.post.rawContent;
-
-  editorTitleElement.textContent = data.post.title;
-  editorMetaElement.textContent = [
-    data.post.slug,
-    data.post.pubDatetime || "未填写发布时间",
-    data.post.draft ? "当前是草稿" : "已发布文章",
-  ].join(" | ");
-  editorTextareaElement.value = data.post.rawContent;
-  openPostLinkElement.href = data.post.publicUrl;
-  setEditorEnabled(true);
-  updateDirtyState();
-  renderPostList();
+  populateEditor(data.post);
   setStatus(`已载入《${data.post.title}》。`, "success");
 }
 
 async function saveCurrentPost() {
   if (!selectedPost) return;
 
-  const rawContent = editorTextareaElement.value;
+  const rawContent = serializeCurrentPost();
   saveButtonElement.disabled = true;
   setStatus("正在保存并推送到 GitHub…", "info");
 
@@ -155,16 +283,8 @@ async function saveCurrentPost() {
       body: JSON.stringify({ rawContent }),
     });
 
-    selectedPost = data.post;
-    lastLoadedContent = data.post.rawContent;
-    editorTitleElement.textContent = data.post.title;
-    editorMetaElement.textContent = [
-      data.post.slug,
-      data.post.pubDatetime || "未填写发布时间",
-      data.post.draft ? "当前是草稿" : "已发布文章",
-    ].join(" | ");
-    openPostLinkElement.href = data.post.publicUrl;
-    await loadPosts(selectedPost.slug);
+    populateEditor(data.post);
+    await loadPosts(data.post.slug);
     setStatus(
       data.changed
         ? `已提交并推送，提交号 ${data.commitSha}。几分钟后博客会自动更新。`
@@ -210,7 +330,10 @@ searchInputElement.addEventListener("input", renderPostList);
 refreshButtonElement.addEventListener("click", () => loadPosts(selectedPost?.slug));
 createButtonElement.addEventListener("click", createDraftPost);
 saveButtonElement.addEventListener("click", saveCurrentPost);
-editorTextareaElement.addEventListener("input", updateDirtyState);
+formElements.forEach(element => {
+  const eventName = element.type === "checkbox" ? "change" : "input";
+  element.addEventListener(eventName, updateDirtyState);
+});
 
 document.addEventListener("keydown", event => {
   const saveShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s";
@@ -221,6 +344,8 @@ document.addEventListener("keydown", event => {
   }
 });
 
+resetEditor();
 loadPosts().catch(error => {
+  resetEditor();
   setStatus(error.message || "后台初始化失败", "error");
 });

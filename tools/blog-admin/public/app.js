@@ -9,6 +9,7 @@ const createButtonElement = document.getElementById("create-button");
 const saveButtonElement = document.getElementById("save-button");
 const editorTextareaElement = document.getElementById("editor-textarea");
 const openPostLinkElement = document.getElementById("open-post-link");
+const apiBasePath = "/admin/api/posts";
 
 let posts = [];
 let selectedPost = null;
@@ -105,7 +106,7 @@ async function apiFetch(pathname, options = {}) {
 
 async function loadPosts(selectSlug) {
   setStatus("正在刷新文章列表…", "info");
-  const data = await apiFetch("./api/posts");
+  const data = await apiFetch(apiBasePath);
   posts = data.posts || [];
   renderPostList();
 
@@ -123,7 +124,7 @@ async function loadPosts(selectSlug) {
 
 async function loadPost(slug) {
   setStatus("正在载入文章内容…", "info");
-  const data = await apiFetch(`./api/posts/${slug}`);
+  const data = await apiFetch(`${apiBasePath}/${slug}`);
   selectedPost = data.post;
   lastLoadedContent = data.post.rawContent;
 
@@ -149,7 +150,7 @@ async function saveCurrentPost() {
   setStatus("正在保存并推送到 GitHub…", "info");
 
   try {
-    const data = await apiFetch(`./api/posts/${selectedPost.slug}`, {
+    const data = await apiFetch(`${apiBasePath}/${selectedPost.slug}`, {
       method: "POST",
       body: JSON.stringify({ rawContent }),
     });
@@ -188,7 +189,7 @@ async function createDraftPost() {
   setStatus("正在创建草稿文章…", "info");
 
   try {
-    const data = await apiFetch("./api/posts", {
+    const data = await apiFetch(apiBasePath, {
       method: "POST",
       body: JSON.stringify({ slug, title }),
     });

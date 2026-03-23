@@ -358,14 +358,16 @@ async function serveStaticFile(res, filePath) {
 
   res.writeHead(200, {
     "content-type": contentType,
-    "cache-control": fileExt === ".html" ? "no-store" : "public, max-age=300",
+    "cache-control": "no-store",
   });
   createReadStream(filePath).pipe(res);
 }
 
 async function handleRequest(req, res) {
   const requestUrl = new URL(req.url || "/", `http://${req.headers.host || host}`);
-  const pathname = requestUrl.pathname;
+  const pathname = requestUrl.pathname
+    .replace(/^\/admin(?=\/|$)/, "")
+    .replace(/^$/, "/");
 
   try {
     if (req.method === "GET" && pathname === "/health") {

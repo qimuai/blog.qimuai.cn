@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qimuai Blog 后台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <p class="eyebrow">Qimuai Blog</p>
+          <h1>文章后台</h1>
+          <p class="sidebar-note">直接编辑 Markdown，保存后自动推送并触发博客发布。</p>
+        </div>
+
+        <div class="toolbar">
+          <button id="refresh-button" type="button" class="ghost-button">刷新列表</button>
+          <button id="create-button" type="button" class="primary-button">新建草稿</button>
+        </div>
+
+        <label class="search-field">
+          <span>搜索文章</span>
+          <input id="search-input" type="search" placeholder="按标题或 slug 搜索" />
+        </label>
+
+        <div id="list-meta" class="list-meta">正在加载文章列表…</div>
+        <div id="post-list" class="post-list" aria-live="polite"></div>
+      </aside>
+
+      <main class="editor-panel">
+        <header class="editor-header">
+          <div>
+            <p class="eyebrow">在线编辑</p>
+            <h2 id="editor-title">选择左侧文章开始编辑</h2>
+            <p id="editor-meta" class="editor-meta">支持快捷键 Ctrl/Cmd + S 保存。</p>
+          </div>
+
+          <div class="editor-actions">
+            <a
+              id="open-post-link"
+              class="ghost-link"
+              href="https://blog.qimuai.cn"
+              target="_blank"
+              rel="noreferrer"
+            >
+              打开线上文章
+            </a>
+            <button id="save-button" type="button" class="primary-button" disabled>
+              保存并发布
+            </button>
+          </div>
+        </header>
+
+        <div id="status-banner" class="status-banner" hidden></div>
+
+        <label class="editor-field">
+          <span>文章内容</span>
+          <textarea
+            id="editor-textarea"
+            spellcheck="false"
+            placeholder="这里会显示完整的 Markdown 文件内容"
+            disabled
+          ></textarea>
+        </label>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

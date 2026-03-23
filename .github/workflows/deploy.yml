@@ -62,6 +62,17 @@ jobs:
             dist/ \
             "${{ secrets.BLOG_DEPLOY_USER }}@${{ secrets.BLOG_DEPLOY_HOST }}:${{ secrets.BLOG_DEPLOY_PATH }}"
 
+      - name: Sync admin app on server
+        shell: bash
+        run: |
+          ssh -p "${{ secrets.BLOG_DEPLOY_PORT }}" \
+            "${{ secrets.BLOG_DEPLOY_USER }}@${{ secrets.BLOG_DEPLOY_HOST }}" \
+            'set -e
+            cd /opt/blog-admin/repo
+            git pull --ff-only origin main
+            sudo systemctl restart blog-admin.service
+            sudo systemctl --no-pager --full status blog-admin.service | sed -n "1,12p"'
+
       - name: Verify deployed site
         shell: bash
         run: |

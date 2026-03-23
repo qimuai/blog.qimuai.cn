@@ -31,20 +31,20 @@ const isActive = (path: string) => {
 </a>
 
 <header
-  class="app-layout flex flex-col items-center justify-between sm:flex-row"
+  class="wide-layout flex flex-col items-center justify-between sm:flex-row"
 >
   <div
     id="top-nav-wrap"
     class:list={[
       "py-4 sm:py-6",
-      "border-b border-border",
+      "border-b border-border/70",
       "relative w-full bg-background",
       "flex items-baseline justify-between sm:items-center",
     ]}
   >
     <a
       href="/"
-      class="absolute py-1 text-xl leading-8 font-semibold tracking-[0.08em] whitespace-nowrap sm:static sm:my-auto sm:text-2xl sm:leading-none"
+      class="absolute py-1 font-display text-xl leading-8 font-semibold tracking-[0.08em] whitespace-nowrap sm:static sm:my-auto sm:text-3xl sm:leading-none"
     >
       {SITE.title}
     </a>

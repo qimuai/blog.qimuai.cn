@@ -10,24 +10,63 @@ type Props = {
 
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;
 
-const { title, description, ...props } = data;
+const {
+  title,
+  description,
+  tags,
+  featured,
+  pubDatetime,
+  modDatetime,
+  timezone,
+} = data;
+const metaTag = tags.at(0) ?? "文章";
 ---
 
 <li class="my-6">
   <a
     href={getPath(id, filePath)}
     class:list={[
-      "inline-block text-lg font-medium text-accent",
-      "decoration-dashed underline-offset-4 hover:underline",
-      "focus-visible:no-underline focus-visible:underline-offset-0",
+      "group block paper-panel p-5 transition-transform duration-200",
+      "hover:-translate-y-0.5 hover:border-accent/50",
+      "focus-visible:no-underline",
     ]}
   >
+    <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+      <span class="section-kicker">{metaTag}</span>
+      {
+        featured && (
+          <span class="rounded-full border border-border px-2 py-1 text-[0.68rem] tracking-[0.22em] text-foreground/60 uppercase">
+            Featured
+          </span>
+        )
+      }
+    </div>
     <Heading
       style={{ viewTransitionName: slugifyStr(title.replaceAll(".", "-")) }}
+      class="mt-4 font-display text-2xl leading-tight text-foreground transition-colors group-hover:text-accent"
     >
       {title}
     </Heading>
+    <p class="mt-3 text-sm leading-7 text-foreground/78 sm:text-base">
+      {description}
+    </p>
+    <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+      <Datetime
+        pubDatetime={pubDatetime}
+        modDatetime={modDatetime}
+        timezone={timezone}
+      />
+      <div class="flex flex-wrap gap-2 text-xs text-foreground/56">
+        {
+          tags
+            .slice(0, 3)
+            .map(tag => (
+              <span class="rounded-full border border-border/80 px-2.5 py-1">
+                {tag}
+              </span>
+            ))
+        }
+      </div>
+    </div>
   </a>
-  <Datetime {...props} />
-  <p>{description}</p>
 </li>

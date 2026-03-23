@@ -9,8 +9,11 @@ import EditPost from "@/components/EditPost.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
+import TableOfContents from "@/components/TableOfContents.astro";
+import GiscusComments from "@/components/GiscusComments.astro";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
+import getReadingStats from "@/utils/getReadingStats";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
 import { SITE } from "@/config";
@@ -35,23 +38,23 @@ const {
   hideEditPost,
 } = post.data;
 
-const { Content } = await render(post);
+const { Content, headings = [] } = await render(post);
+const readingStats = getReadingStats(post.body ?? "");
+const leadTag = tags.at(0) ?? "文章";
+const tocHeadings = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
 
 let ogImageUrl: string | undefined;
 
-// Determine OG image source
 if (typeof initOgImage === "string") {
-  ogImageUrl = initOgImage; // Remote OG image (absolute URL)
+  ogImageUrl = initOgImage;
 } else if (initOgImage?.src) {
-  ogImageUrl = initOgImage.src; // Local asset
+  ogImageUrl = initOgImage.src;
 }
 
-// Use dynamic OG image if enabled and no remote|local ogImage
 if (!ogImageUrl && SITE.dynamicOgImage) {
   ogImageUrl = `${getPath(post.id, post.filePath)}/index.png`;
 }
 
-// Resolve OG image URL (or fallback to SITE.ogImage / default `og.png`)
 const ogImage = ogImageUrl
   ? new URL(ogImageUrl, Astro.url.origin).href
   : undefined;
@@ -67,8 +70,6 @@ const layoutProps = {
   scrollSmooth: true,
 };
 
-/* ========== Prev/Next Posts ========== */
-
 const allPosts = posts.map(({ data: { title }, id, filePath }) => ({
   id,
   title,
@@ -77,9 +78,11 @@ const allPosts = posts.map(({ data: { title }, id, filePath }) => ({
 
 const currentPostIndex = allPosts.findIndex(a => a.id === post.id);
 
-const prevPost = currentPostIndex !== 0 ? allPosts[currentPostIndex - 1] : null;
+const prevPost = currentPostIndex > 0 ? allPosts[currentPostIndex - 1] : null;
 const nextPost =
-  currentPostIndex !== allPosts.length ? allPosts[currentPostIndex + 1] : null;
+  currentPostIndex >= 0 && currentPostIndex < allPosts.length - 1
+    ? allPosts[currentPostIndex + 1]
+    : null;
 ---
 
 <Layout {...layoutProps}>
@@ -87,57 +90,125 @@ const nextPost =
   <BackButton />
   <main
     id="main-content"
-    class:list={["app-layout pb-12", { "mt-8": !SITE.showBackButton }]}
+    class:list={[
+      "wide-layout pb-12",
+      { "mt-8": !SITE.showBackButton, "mt-6": SITE.showBackButton },
+    ]}
     data-pagefind-body
   >
-    <h1
-      transition:name={slugifyStr(title.replaceAll(".", "-"))}
-      class="inline-block text-2xl font-bold text-accent sm:text-3xl"
-    >
-      {title}
-    </h1>
-    <div class="my-2 flex items-center gap-2">
-      <Datetime {pubDatetime} {modDatetime} {timezone} size="lg" />
-      <span
-        aria-hidden="true"
-        class:list={[
-          "max-sm:hidden",
-          { hidden: !SITE.editPost.enabled || hideEditPost },
-        ]}>|</span
+    <header class="border-b border-border/70 pb-10">
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        <span class="section-kicker">{leadTag}</span>
+        <span class="text-foreground/40">/</span>
+        <span class="text-foreground/56"
+          >{new Date(pubDatetime).getFullYear()}</span
+        >
+      </div>
+      <h1
+        transition:name={slugifyStr(title.replaceAll(".", "-"))}
+        class="mt-5 inline-block max-w-4xl font-display text-4xl leading-tight font-semibold text-foreground sm:text-5xl lg:text-6xl"
       >
-      <EditPost {hideEditPost} {post} class="max-sm:hidden" />
+        {title}
+      </h1>
+      <p
+        class="mt-5 max-w-3xl text-base leading-8 text-foreground/78 sm:text-xl"
+      >
+        {description}
+      </p>
+      <div class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="paper-panel p-4">
+          <div class="section-kicker">发布日期</div>
+          <Datetime
+            pubDatetime={pubDatetime}
+            timezone={timezone}
+            class="mt-3"
+          />
+        </div>
+        <div class="paper-panel p-4">
+          <div class="section-kicker">阅读时长</div>
+          <div class="mt-3 text-sm text-foreground/78 sm:text-base">
+            约 {readingStats.readingMinutes} 分钟
+          </div>
+        </div>
+        <div class="paper-panel p-4">
+          <div class="section-kicker">文本规模</div>
+          <div class="mt-3 text-sm text-foreground/78 sm:text-base">
+            约 {readingStats.wordCount} 字
+          </div>
+        </div>
+        <div class="paper-panel p-4">
+          <div class="section-kicker">本文阅读</div>
+          <div class="mt-3 text-sm text-foreground/78 sm:text-base">
+            <span id="busuanzi_container_page_pv" style="display:none;">
+              <span id="busuanzi_value_page_pv"></span> 次
+            </span>
+            <span id="page-pv-fallback">统计加载中</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_240px]">
+      <div class="min-w-0">
+        <article
+          id="article"
+          class="app-prose w-full max-w-3xl prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+        >
+          <Content />
+        </article>
+
+        <hr class="my-8 border-dashed" />
+
+        <EditPost class="sm:hidden" {hideEditPost} {post} />
+
+        <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
+          {
+            tags.map(tag => (
+              <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />
+            ))
+          }
+        </ul>
+
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-3 text-sm">
+          <EditPost {hideEditPost} {post} class="hidden sm:inline-flex" />
+          <ShareLinks />
+        </div>
+
+        <GiscusComments />
+      </div>
+
+      <aside
+        class="space-y-6 xl:sticky xl:top-24 xl:self-start"
+        data-pagefind-ignore
+      >
+        <TableOfContents headings={tocHeadings} />
+        <div class="paper-panel p-5">
+          <p class="section-kicker">文中标签</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {
+              tags.map(tag => (
+                <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />
+              ))
+            }
+          </div>
+        </div>
+      </aside>
     </div>
-    <article
-      id="article"
-      class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
-    >
-      <Content />
-    </article>
-
-    <hr class="my-8 border-dashed" />
-
-    <EditPost class="sm:hidden" {hideEditPost} {post} />
-
-    <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
-      {tags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />)}
-    </ul>
 
     <BackToTopButton />
 
-    <ShareLinks />
-
-    <hr class="my-6 border-dashed" />
+    <hr class="my-10 border-dashed" />
 
     <div data-pagefind-ignore class="grid grid-cols-1 gap-6 sm:grid-cols-2">
       {
         prevPost && (
           <a
             href={getPath(prevPost.id, prevPost.filePath)}
-            class="flex w-full gap-1 hover:opacity-75"
+            class="flex w-full gap-3 paper-panel p-4 hover:border-accent/50"
           >
             <IconChevronLeft class="inline-block flex-none rtl:rotate-180" />
             <div>
-              <span>上一篇</span>
+              <span class="section-kicker">上一篇</span>
               <div class="text-sm text-accent/85">{prevPost.title}</div>
             </div>
           </a>
@@ -147,10 +218,10 @@ const nextPost =
         nextPost && (
           <a
             href={getPath(nextPost.id, nextPost.filePath)}
-            class="flex w-full justify-end gap-1 text-end hover:opacity-75 sm:col-start-2"
+            class="flex w-full justify-end gap-3 paper-panel p-4 text-end hover:border-accent/50 sm:col-start-2"
           >
             <div>
-              <span>下一篇</span>
+              <span class="section-kicker">下一篇</span>
               <div class="text-sm text-accent/85">{nextPost.title}</div>
             </div>
             <IconChevronRight class="inline-block flex-none rtl:rotate-180" />
@@ -163,29 +234,20 @@ const nextPost =
 </Layout>
 
 <script is:inline data-astro-rerun>
-  /** Create a progress indicator
-   *  at the top */
   function createProgressBar() {
-    // Create the main container div
     const progressContainer = document.createElement("div");
     progressContainer.className =
       "progress-container fixed top-0 z-10 h-1 w-full bg-background";
 
-    // Create the progress bar div
     const progressBar = document.createElement("div");
     progressBar.className = "progress-bar h-1 w-0 bg-accent";
     progressBar.id = "myBar";
 
-    // Append the progress bar to the progress container
     progressContainer.appendChild(progressBar);
-
-    // Append the progress container to the document body or any other desired parent element
     document.body.appendChild(progressContainer);
   }
   createProgressBar();
 
-  /** Update the progress bar
-   *  when user scrolls */
   function updateScrollProgress() {
     document.addEventListener("scroll", () => {
       const winScroll =
@@ -204,8 +266,6 @@ const nextPost =
   }
   updateScrollProgress();
 
-  /** Attaches links to headings in the document,
-   *  allowing sharing of sections easily */
   function addHeadingLinks() {
     const headings = Array.from(
       document.querySelectorAll("h2, h3, h4, h5, h6")
@@ -226,22 +286,18 @@ const nextPost =
   }
   addHeadingLinks();
 
-  /** Attaches copy buttons to code blocks in the document,
-   * allowing users to copy code easily. */
   function attachCopyButtons() {
-    const copyButtonLabel = "Copy";
+    const copyButtonLabel = "复制";
     const codeBlocks = Array.from(document.querySelectorAll("pre"));
 
     for (const codeBlock of codeBlocks) {
       const wrapper = document.createElement("div");
       wrapper.style.position = "relative";
 
-      // Check if --file-name-offset custom property exists
       const computedStyle = getComputedStyle(codeBlock);
       const hasFileNameOffset =
         computedStyle.getPropertyValue("--file-name-offset").trim() !== "";
 
-      // Determine the top positioning class
       const topClass = hasFileNameOffset
         ? "top-(--file-name-offset)"
         : "-top-3";
@@ -252,7 +308,6 @@ const nextPost =
       codeBlock.setAttribute("tabindex", "0");
       codeBlock.appendChild(copyButton);
 
-      // wrap codebock with relative parent element
       codeBlock?.parentNode?.insertBefore(wrapper, codeBlock);
       wrapper.appendChild(codeBlock);
 
@@ -267,8 +322,7 @@ const nextPost =
 
       await navigator.clipboard.writeText(text ?? "");
 
-      // visual feedback that task is completed
-      button.innerText = "Copied";
+      button.innerText = "已复制";
 
       setTimeout(() => {
         button.innerText = copyButtonLabel;
@@ -277,7 +331,25 @@ const nextPost =
   }
   attachCopyButtons();
 
-  /* Go to page start after page swap */
+  function syncPageViews() {
+    const fallback = document.getElementById("page-pv-fallback");
+    const value = document.getElementById("busuanzi_value_page_pv");
+
+    if (!fallback || !value) return;
+
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      const ready = Boolean(value.textContent?.trim());
+      fallback.toggleAttribute("hidden", ready);
+      attempts += 1;
+
+      if (ready || attempts > 20) {
+        window.clearInterval(timer);
+      }
+    }, 250);
+  }
+  syncPageViews();
+
   document.addEventListener("astro:after-swap", () =>
     window.scrollTo({ left: 0, top: 0, behavior: "instant" })
   );

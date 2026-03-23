@@ -1,0 +1,107 @@
+---
+import { SITE } from "@/config";
+
+const comments = SITE.comments;
+---
+
+{
+  comments.enabled && (
+    <section class="mt-16 border-t border-border/70 pt-10">
+      <div class="paper-panel p-6 sm:p-8">
+        <p class="section-kicker">讨论区</p>
+        <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="font-display text-2xl leading-tight text-foreground sm:text-3xl">
+              继续把这篇文章讨论下去
+            </h2>
+            <p class="mt-2 max-w-2xl text-sm leading-7 text-foreground/72 sm:text-base">
+              评论托管在 GitHub
+              Discussions，适合继续补充案例、反驳观点，或者把后续踩坑记录留下来。
+            </p>
+          </div>
+          <a
+            href={`https://github.com/${comments.repo}/discussions`}
+            class="text-sm text-accent underline decoration-dashed underline-offset-4"
+          >
+            打开 Discussions
+          </a>
+        </div>
+        <div id="giscus-thread" class="mt-8 min-h-40" />
+      </div>
+    </section>
+  )
+}
+
+<script
+  is:inline
+  data-astro-rerun
+  define:vars={{
+    repo: comments.repo,
+    repoId: comments.repoId,
+    category: comments.category,
+    categoryId: comments.categoryId,
+    mapping: comments.mapping,
+    strict: comments.strict,
+    reactionsEnabled: comments.reactionsEnabled,
+    emitMetadata: comments.emitMetadata,
+    inputPosition: comments.inputPosition,
+    lang: comments.lang,
+  }}
+>
+  const THREAD_ID = "giscus-thread";
+
+  function getGiscusTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark"
+      ? "dark_dimmed"
+      : "light";
+  }
+
+  function renderGiscus() {
+    const container = document.getElementById(THREAD_ID);
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.setAttribute("data-repo", repo);
+    script.setAttribute("data-repo-id", repoId);
+    script.setAttribute("data-category", category);
+    script.setAttribute("data-category-id", categoryId);
+    script.setAttribute("data-mapping", mapping);
+    script.setAttribute("data-strict", strict);
+    script.setAttribute("data-reactions-enabled", reactionsEnabled);
+    script.setAttribute("data-emit-metadata", emitMetadata);
+    script.setAttribute("data-input-position", inputPosition);
+    script.setAttribute("data-lang", lang);
+    script.setAttribute("data-theme", getGiscusTheme());
+    container.appendChild(script);
+  }
+
+  function syncGiscusTheme() {
+    const iframe = document.querySelector("iframe.giscus-frame");
+    if (!iframe || !iframe.contentWindow) return;
+
+    iframe.contentWindow.postMessage(
+      {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(),
+          },
+        },
+      },
+      "https://giscus.app"
+    );
+  }
+
+  function bootGiscus() {
+    renderGiscus();
+    window.setTimeout(syncGiscusTheme, 350);
+  }
+
+  bootGiscus();
+  document.addEventListener("astro:page-load", bootGiscus);
+  document.addEventListener("theme-changed", syncGiscusTheme);
+</script>

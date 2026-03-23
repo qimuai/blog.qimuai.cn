@@ -16,32 +16,47 @@ const posts = await getCollection("blog");
 const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
+const latestPost = sortedPosts.at(0);
+const uniqueTags = new Set(sortedPosts.flatMap(({ data }) => data.tags));
 ---
 
 <Layout>
   <Header />
-  <main id="main-content" data-layout="index" class="app-layout">
-    <section id="hero" class:list={["pt-10 pb-8", "border-b border-border"]}>
-      <p class="text-xs tracking-[0.35em] text-accent/80 uppercase">
-        blog.qimuai.cn
-      </p>
+  <main id="main-content" data-layout="index" class="wide-layout">
+    <section id="hero" class:list={["pt-8 pb-10", "border-b border-border/70"]}>
+      <p class="section-kicker">blog.qimuai.cn</p>
       <div
-        class="mt-5 grid gap-8 sm:grid-cols-[minmax(0,1.5fr)_minmax(220px,0.8fr)] sm:items-end"
+        class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.8fr)]"
       >
         <div>
           <h1
-            class="max-w-3xl text-4xl leading-tight font-semibold sm:text-6xl"
+            class="max-w-4xl font-display text-5xl leading-[1.08] font-semibold sm:text-6xl lg:text-7xl"
           >
             把复杂问题写清楚，把真实经验留下来。
           </h1>
-          <p class="mt-5 max-w-2xl text-base leading-8 sm:text-lg">
+          <p
+            class="mt-6 max-w-2xl text-base leading-8 text-foreground/80 sm:text-lg"
+          >
             这里记录 AI 应用、自动化工作流、Web 工程和产品实践，
             重点不是概念，而是那些真正在线上跑通的细节。
           </p>
-          <p class="mt-3 max-w-2xl text-base leading-8 text-foreground/80">
-            如果一篇文章不能帮人少踩几个坑，它就还不值得发出来。
-          </p>
-          <div class="mt-6 flex flex-wrap gap-3">
+          <div
+            class="mt-6 grid max-w-3xl gap-3 text-sm leading-7 text-foreground/72 sm:grid-cols-3"
+          >
+            <div class="paper-panel p-4">
+              <div class="section-kicker">写作准则</div>
+              <p class="mt-3">只写亲手做过、真正在生产或协作里验证过的内容。</p>
+            </div>
+            <div class="paper-panel p-4">
+              <div class="section-kicker">偏好主题</div>
+              <p class="mt-3">AI 工具链、自动化流程、内容系统、部署与复盘。</p>
+            </div>
+            <div class="paper-panel p-4">
+              <div class="section-kicker">更新方式</div>
+              <p class="mt-3">本地写作，推送 GitHub，自动发布到腾讯云。</p>
+            </div>
+          </div>
+          <div class="mt-7 flex flex-wrap gap-4">
             <LinkButton href="/posts/">
               开始阅读
               <IconArrowRight class="inline-block rtl:-rotate-180" />
@@ -52,27 +67,35 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
           </div>
         </div>
 
-        <aside
-          class="border border-border bg-background/75 p-4 backdrop-blur-sm"
-        >
-          <div class="text-xs tracking-[0.3em] text-accent/80 uppercase">
-            关注领域
+        <aside class="paper-panel p-5">
+          <div class="section-kicker">站点状态</div>
+          <div class="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
+            <div class="border-b border-border/60 pb-3">
+              <div class="text-foreground/56">文章数量</div>
+              <div class="mt-1 font-display text-3xl">{sortedPosts.length}</div>
+            </div>
+            <div class="border-b border-border/60 pb-3">
+              <div class="text-foreground/56">主题标签</div>
+              <div class="mt-1 font-display text-3xl">{uniqueTags.size}</div>
+            </div>
+            <div class="border-b border-border/60 pb-3">
+              <div class="text-foreground/56">最近更新</div>
+              <div class="mt-1 text-base">
+                {latestPost?.data.title ?? "准备中"}
+              </div>
+            </div>
+            <div>
+              <div class="text-foreground/56">发布链路</div>
+              <div class="mt-1 text-base">GitHub Actions 已接通</div>
+            </div>
           </div>
-          <ul class="mt-3 space-y-2 text-sm leading-7 sm:text-base">
-            <li>AI 工作流与工具链</li>
-            <li>自动化部署与协作</li>
-            <li>Web 工程与内容系统</li>
-            <li>产品实践与复盘</li>
-          </ul>
         </aside>
       </div>
 
       {
         SOCIALS.length > 0 && (
-          <div class="mt-6 flex flex-wrap items-center gap-3 text-sm">
-            <span class="tracking-[0.24em] text-accent/80 uppercase">
-              相关链接
-            </span>
+          <div class="mt-8 flex flex-wrap items-center gap-3 text-sm">
+            <span class="section-kicker">相关链接</span>
             <Socials />
           </div>
         )
@@ -85,10 +108,13 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
           id="featured"
           class:list={[
             "pt-12 pb-6",
-            { "border-b border-border": recentPosts.length > 0 },
+            { "border-b border-border/70": recentPosts.length > 0 },
           ]}
         >
-          <h2 class="text-2xl font-semibold tracking-wide">置顶文章</h2>
+          <p class="section-kicker">Editor's Pick</p>
+          <h2 class="mt-3 font-display text-3xl font-semibold tracking-wide">
+            置顶文章
+          </h2>
           <ul>
             {featuredPosts.map(data => (
               <Card variant="h3" {...data} />
@@ -101,7 +127,10 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
     {
       recentPosts.length > 0 && (
         <section id="recent-posts" class="pt-12 pb-6">
-          <h2 class="text-2xl font-semibold tracking-wide">最新更新</h2>
+          <p class="section-kicker">Recent Notes</p>
+          <h2 class="mt-3 font-display text-3xl font-semibold tracking-wide">
+            最新更新
+          </h2>
           <ul>
             {recentPosts.map(
               (data, index) =>
@@ -112,7 +141,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
       )
     }
 
-    <div class="my-8 text-center">
+    <div class="my-10 text-center">
       <LinkButton href="/posts/">
         查看全部文章
         <IconArrowRight class="inline-block rtl:-rotate-180" />

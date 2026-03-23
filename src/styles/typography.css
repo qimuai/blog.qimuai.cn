@@ -13,8 +13,12 @@
       @apply mb-3 text-foreground;
     }
 
+    h2 {
+      @apply mt-14 border-t border-border/60 pt-8 text-2xl;
+    }
+
     h3 {
-      @apply italic;
+      @apply mt-10 text-xl;
     }
 
     p,
@@ -25,6 +29,11 @@
     table,
     code {
       @apply text-foreground;
+    }
+
+    p,
+    li {
+      @apply leading-8;
     }
 
     a {
@@ -48,7 +57,7 @@
     }
 
     figcaption {
-      @apply opacity-75;
+      @apply mt-3 opacity-75;
     }
 
     table {
@@ -67,7 +76,7 @@
     }
 
     code {
-      @apply rounded bg-muted/75 p-1 wrap-break-word text-foreground before:content-none after:content-none;
+      @apply rounded bg-muted/75 px-1.5 py-1 wrap-break-word text-foreground before:content-none after:content-none;
     }
 
     .astro-code code {
@@ -75,7 +84,7 @@
     }
 
     blockquote {
-      @apply border-s-accent/80 wrap-break-word opacity-80;
+      @apply border-s-2 border-s-accent/80 bg-muted/35 px-6 py-4 wrap-break-word opacity-100;
     }
 
     details {

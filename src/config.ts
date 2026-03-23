@@ -20,4 +20,23 @@ export const SITE = {
   dir: "ltr", // "rtl" | "auto"
   lang: "zh", // html lang code. Set this empty and default will be "en"
   timezone: "Asia/Shanghai", // Default global timezone (IANA format) https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  comments: {
+    enabled: true,
+    repo: "qimuai/blog.qimuai.cn",
+    repoId: "R_kgDORuRW0A",
+    category: "General",
+    categoryId: "DIC_kwDORuRW0M4C5FAJ",
+    mapping: "pathname",
+    strict: "0",
+    reactionsEnabled: "1",
+    emitMetadata: "0",
+    inputPosition: "top",
+    lang: "zh-CN",
+  },
+  analytics: {
+    enabled: true,
+    provider: "busuanzi",
+    showSiteStats: true,
+    showPageStats: true,
+  },
 } as const;

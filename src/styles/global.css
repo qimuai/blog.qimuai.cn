@@ -5,15 +5,15 @@
 
 :root,
 html[data-theme="light"] {
-  --background: #fefbfb;
-  --foreground: #1f2937;
+  --background: #ffffff;
+  --foreground: #111827;
   --accent: #2563eb;
-  --muted: #ecebeb;
-  --border: #d9dce3;
-  --spotlight: rgba(37, 99, 235, 0.045);
-  --grid-line: rgba(15, 23, 42, 0.028);
-  --paper-wash: rgba(255, 255, 255, 0.9);
-  --panel-shadow: 0 18px 44px rgba(15, 23, 42, 0.045);
+  --muted: #f3f6fb;
+  --border: #e5e7eb;
+  --spotlight: rgba(37, 99, 235, 0.03);
+  --grid-line: rgba(15, 23, 42, 0.022);
+  --paper-wash: rgba(248, 250, 252, 0.78);
+  --panel-shadow: 0 18px 44px rgba(15, 23, 42, 0.035);
 }
 
 html[data-theme="dark"] {
@@ -59,8 +59,8 @@ html[data-theme="dark"] {
   body {
     @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/75 selection:text-background;
     background-image:
-      radial-gradient(circle at top right, var(--spotlight), transparent 32rem),
-      linear-gradient(180deg, var(--paper-wash), transparent 24rem);
+      radial-gradient(circle at top right, var(--spotlight), transparent 34rem),
+      linear-gradient(180deg, var(--paper-wash), transparent 22rem);
     background-attachment: fixed;
     position: relative;
   }

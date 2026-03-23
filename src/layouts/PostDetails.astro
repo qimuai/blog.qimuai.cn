@@ -174,7 +174,11 @@ const nextPost =
           <ShareLinks />
         </div>
 
-        <GiscusComments />
+        <GiscusComments
+          pagePath={getPath(post.id, post.filePath)}
+          pageTitle={title}
+          pageUrl={new URL(getPath(post.id, post.filePath), Astro.site).href}
+        />
       </div>
 
       <aside

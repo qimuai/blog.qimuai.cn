@@ -2,6 +2,7 @@ name: Deploy
 
 permissions:
   contents: read
+  discussions: write
 
 on:
   push:
@@ -36,6 +37,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Sync article discussions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-discussions.mjs
 
       - name: Build site
         run: pnpm run build

@@ -22,6 +22,7 @@ export const SITE = {
   timezone: "Asia/Shanghai", // Default global timezone (IANA format) https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   comments: {
     enabled: true,
+    provider: "github-discussions-link",
     repo: "qimuai/blog.qimuai.cn",
     repoId: "R_kgDORuRW0A",
     category: "General",

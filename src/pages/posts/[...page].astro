@@ -1,14 +1,35 @@
 ---
 import type { GetStaticPaths } from "astro";
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import Main from "@/layouts/Main.astro";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Card from "@/components/Card.astro";
 import Pagination from "@/components/Pagination.astro";
+import PostsMonthDirectory from "@/components/PostsMonthDirectory.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
 import { SITE } from "@/config";
+
+type BlogPost = CollectionEntry<"blog">;
+type MonthDirectoryItem = {
+  key: string;
+  year: string;
+  label: string;
+  count: number;
+  href: string;
+  isCurrentPage: boolean;
+};
+type MonthDirectoryGroup = {
+  year: string;
+  items: MonthDirectoryItem[];
+};
+type VisibleMonthSection = {
+  key: string;
+  label: string;
+  anchorId: string;
+  posts: BlogPost[];
+};
 
 export const getStaticPaths = (async ({ paginate }) => {
   const posts = await getCollection("blog", ({ data }) => !data.draft);
@@ -16,14 +37,103 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths;
 
 const { page } = Astro.props;
+const posts = await getCollection("blog", ({ data }) => !data.draft);
+const sortedPosts = getSortedPosts(posts);
+
+const formatMonthKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+const formatMonthLabel = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+const getMonthAnchor = (key: string) => `posts-month-${key}`;
+
+const getPostsPagePath = (pageNumber: number) =>
+  pageNumber === 1 ? "/posts/" : `/posts/${pageNumber}/`;
+
+const monthDirectoryMap = new Map<string, MonthDirectoryItem>();
+
+for (const [index, post] of sortedPosts.entries()) {
+  const key = formatMonthKey(post.data.pubDatetime);
+  const pageNumber = Math.floor(index / SITE.postPerPage) + 1;
+
+  if (!monthDirectoryMap.has(key)) {
+    monthDirectoryMap.set(key, {
+      key,
+      year: String(post.data.pubDatetime.getFullYear()),
+      label: formatMonthLabel(post.data.pubDatetime),
+      count: 0,
+      href: `${getPostsPagePath(pageNumber)}#${getMonthAnchor(key)}`,
+      isCurrentPage: pageNumber === page.currentPage,
+    });
+  }
+
+  monthDirectoryMap.get(key)!.count += 1;
+}
+
+const monthDirectoryGroups = Object.values(
+  Array.from(monthDirectoryMap.values()).reduce<
+    Record<string, MonthDirectoryGroup>
+  >((groups, item) => {
+    groups[item.year] ??= { year: item.year, items: [] };
+    groups[item.year].items.push(item);
+    return groups;
+  }, {})
+).sort((a, b) => Number(b.year) - Number(a.year));
+
+const visibleMonthSections = page.data.reduce<VisibleMonthSection[]>(
+  (sections, post) => {
+    const key = formatMonthKey(post.data.pubDatetime);
+    const currentSection = sections.at(-1);
+
+    if (currentSection?.key === key) {
+      currentSection.posts.push(post);
+      return sections;
+    }
+
+    sections.push({
+      key,
+      label: formatMonthLabel(post.data.pubDatetime),
+      anchorId: getMonthAnchor(key),
+      posts: [post],
+    });
+
+    return sections;
+  },
+  []
+);
 ---
 
 <Layout title={`文章 | ${SITE.title}`}>
   <Header />
   <Main pageTitle="文章" pageDesc="所有公开发布的文章。">
-    <ul>
-      {page.data.map(data => <Card {...data} />)}
-    </ul>
+    <PostsMonthDirectory
+      groups={monthDirectoryGroups}
+      currentPage={page.currentPage}
+      lastPage={page.lastPage}
+    />
+
+    <div class="space-y-10" data-pagefind-ignore>
+      {
+        visibleMonthSections.map(section => (
+          <section id={section.anchorId} class="scroll-mt-20">
+            <div class="mb-4 flex items-end justify-between gap-4 border-b border-border/70 pb-3">
+              <h2 class="font-display text-2xl text-foreground sm:text-[2rem]">
+                {section.label}
+              </h2>
+              <span class="text-[0.68rem] tracking-[0.24em] text-foreground/34 uppercase">
+                {section.posts.length} 篇
+              </span>
+            </div>
+            <ul>
+              {section.posts.map(data => (
+                <Card {...data} />
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
   </Main>
 
   <Pagination {page} />

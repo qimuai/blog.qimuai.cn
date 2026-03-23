@@ -129,13 +129,27 @@ function buildTagsFrontmatter(tags) {
   return ["tags:", ...tags.map(tag => `  - ${yamlString(tag)}`)].join("\n");
 }
 
-function serializeCurrentPost() {
-  const title = metaTitleElement.value.trim() || selectedPost?.title || "";
-  const author = metaAuthorElement.value.trim() || selectedPost?.author || "Aaron";
+function getCurrentPubDatetime({ validate = false } = {}) {
   const pubDatetime =
     metaPubDatetimeElement.value.trim() ||
     selectedPost?.pubDatetime ||
     new Date().toISOString();
+
+  if (!validate) {
+    return pubDatetime;
+  }
+
+  if (!Number.isNaN(Date.parse(pubDatetime))) {
+    return pubDatetime;
+  }
+
+  throw new Error("发布时间格式不正确，请使用 2026-03-24T10:00:00+08:00 这样的格式");
+}
+
+function serializeCurrentPost({ validate = false } = {}) {
+  const title = metaTitleElement.value.trim() || selectedPost?.title || "";
+  const author = metaAuthorElement.value.trim() || selectedPost?.author || "Aaron";
+  const pubDatetime = getCurrentPubDatetime({ validate });
   const description = metaDescriptionElement.value.trim();
   const tags = parseTagsInput(metaTagsElement.value);
   const draft = metaDraftElement.checked;
@@ -143,7 +157,7 @@ function serializeCurrentPost() {
   const managedFrontmatter = [
     `title: ${yamlString(title)}`,
     `author: ${yamlString(author)}`,
-    `pubDatetime: ${yamlString(pubDatetime)}`,
+    `pubDatetime: ${pubDatetime}`,
     `description: ${yamlString(description)}`,
     buildTagsFrontmatter(tags),
     `draft: ${draft ? "true" : "false"}`,
@@ -510,11 +524,11 @@ async function loadPost(slug) {
 async function saveCurrentPost() {
   if (!selectedPost) return;
 
-  const rawContent = serializeCurrentPost();
   saveButtonElement.disabled = true;
   setStatus("正在保存并推送到 GitHub…", "info");
 
   try {
+    const rawContent = serializeCurrentPost({ validate: true });
     const data = await apiFetch(`${apiBasePath}/${selectedPost.slug}`, {
       method: "POST",
       body: JSON.stringify({ rawContent }),

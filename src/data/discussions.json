@@ -4,10 +4,35 @@
     "title": "[ /posts/automate-epub-to-markdown ] 如何利用脚本尽量将epub2md自动化？",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/16"
   },
+  "/posts/claude-sonnet-4-5-for-coding": {
+    "number": 20,
+    "title": "[ /posts/claude-sonnet-4-5-for-coding ] 深夜突发：Claude Sonnet 4.5 发布，编程的王又升级了",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/20"
+  },
+  "/posts/comfyui-install-debug-and-ui-guide": {
+    "number": 21,
+    "title": "[ /posts/comfyui-install-debug-and-ui-guide ] 一站式解决 ComfyUI 安装、调试和界面操作，附安装包 C001",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/21"
+  },
   "/posts/crawl-a-whole-site-with-claude-code": {
     "number": 15,
     "title": "[ /posts/crawl-a-whole-site-with-claude-code ] 用Claude Code，十分钟爬取整个网站",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/15"
+  },
+  "/posts/cursor-install-and-basic-setup": {
+    "number": 22,
+    "title": "[ /posts/cursor-install-and-basic-setup ] Cursor安装与基础配置手把手教你让AI自动写代码",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/22"
+  },
+  "/posts/deepseek-wechat-customer-service": {
+    "number": 23,
+    "title": "[ /posts/deepseek-wechat-customer-service ] 3分钟搞定微信客服DeepSeek满血版小白也能轻松上手",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/23"
+  },
+  "/posts/deploy-a-146k-star-ai-search-engine": {
+    "number": 24,
+    "title": "[ /posts/deploy-a-146k-star-ai-search-engine ] 颠覆传统搜索146k星标AI搜索引擎手把手教你部署",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/24"
   },
   "/posts/deploying-blog-qimuai-cn-with-astropaper": {
     "number": 7,
@@ -19,10 +44,25 @@
     "title": "[ /posts/hello-qimuai-blog ] blog.qimuai.cn 正式上线",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/6"
   },
+  "/posts/how-beginners-choose-ai-coding-platforms": {
+    "number": 25,
+    "title": "[ /posts/how-beginners-choose-ai-coding-platforms ] AI编程新手如何选择六大平台对比CursorWindSurfv0Bolt通义灵码以及豆包MarsCo",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/25"
+  },
+  "/posts/how-to-use-kimi-for-summaries": {
+    "number": 26,
+    "title": "[ /posts/how-to-use-kimi-for-summaries ] 打开方式不对原来Kimi强大的总结能力是这么用的",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/26"
+  },
   "/posts/lovable-ai-programming-guide": {
     "number": 8,
     "title": "[ /posts/lovable-ai-programming-guide ] 【官方教程】lovable AI编程指南",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/8"
+  },
+  "/posts/my-first-commercial-webpage-without-coding": {
+    "number": 27,
+    "title": "[ /posts/my-first-commercial-webpage-without-coding ] 全流程公开没有写一行代码我开发了人生中第一个商用网页",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/27"
   },
   "/posts/n8n-01-self-hosting-and-updates": {
     "number": 18,
@@ -59,10 +99,20 @@
     "title": "[ /posts/quit-short-video-addiction ] 如何用一招，治好短视频上瘾",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/17"
   },
+  "/posts/use-gpt5-and-claude45-official-api-in-china": {
+    "number": 28,
+    "title": "[ /posts/use-gpt5-and-claude45-official-api-in-china ] 国内无痛调用GPT5Claude45的官方API绝对不会封号官方都拿你没办法",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/28"
+  },
   "/posts/welcome-to-ai-creative-writing": {
     "number": 12,
     "title": "[ /posts/welcome-to-ai-creative-writing ] 借AI妙笔，生文章之花，欢迎来到AI创意写作第一站",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/12"
+  },
+  "/posts/why-deepseek-r1-is-so-powerful": {
+    "number": 29,
+    "title": "[ /posts/why-deepseek-r1-is-so-powerful ] 大白话解释DeepSeekR1究竟厉害在什么地方",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/29"
   },
   "/posts/why-most-ai-agents-are-workflows": {
     "number": 14,

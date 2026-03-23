@@ -8,6 +8,7 @@ import Footer from "@/components/Footer.astro";
 import Card from "@/components/Card.astro";
 import Pagination from "@/components/Pagination.astro";
 import PostsMonthDirectory from "@/components/PostsMonthDirectory.astro";
+import getSiteDateParts from "@/utils/getSiteDateParts";
 import getSortedPosts from "@/utils/getSortedPosts";
 import { SITE } from "@/config";
 
@@ -40,11 +41,9 @@ const { page } = Astro.props;
 const posts = await getCollection("blog", ({ data }) => !data.draft);
 const sortedPosts = getSortedPosts(posts);
 
-const formatMonthKey = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+const formatMonthKey = (date: Date) => getSiteDateParts(date).monthKey;
 
-const formatMonthLabel = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+const formatMonthLabel = (date: Date) => getSiteDateParts(date).monthKey;
 
 const getMonthAnchor = (key: string) => `posts-month-${key}`;
 
@@ -54,14 +53,15 @@ const getPostsPagePath = (pageNumber: number) =>
 const monthDirectoryMap = new Map<string, MonthDirectoryItem>();
 
 for (const [index, post] of sortedPosts.entries()) {
-  const key = formatMonthKey(post.data.pubDatetime);
+  const dateParts = getSiteDateParts(post.data.pubDatetime);
+  const key = dateParts.monthKey;
   const pageNumber = Math.floor(index / SITE.postPerPage) + 1;
 
   if (!monthDirectoryMap.has(key)) {
     monthDirectoryMap.set(key, {
       key,
-      year: String(post.data.pubDatetime.getFullYear()),
-      label: formatMonthLabel(post.data.pubDatetime),
+      year: dateParts.year,
+      label: dateParts.monthKey,
       count: 0,
       href: `${getPostsPagePath(pageNumber)}#${getMonthAnchor(key)}`,
       isCurrentPage: pageNumber === page.currentPage,

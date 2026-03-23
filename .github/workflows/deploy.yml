@@ -71,7 +71,7 @@ jobs:
             cd /opt/blog-admin/repo
             git pull --ff-only origin main
             sudo systemctl restart blog-admin.service
-            sudo systemctl --no-pager --full status blog-admin.service | sed -n "1,12p"'
+            curl -fsS http://127.0.0.1:4321/health'
 
       - name: Verify deployed site
         shell: bash

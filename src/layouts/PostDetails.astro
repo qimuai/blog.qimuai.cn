@@ -42,7 +42,6 @@ const { Content, headings = [] } = await render(post);
 const readingStats = getReadingStats(post.body ?? "");
 const pagePath = getPath(post.id, post.filePath);
 const pageUrl = new URL(pagePath, Astro.site).href;
-const siteHost = new URL(SITE.website).hostname;
 const leadTag = tags.at(0) ?? "文章";
 const tocHeadings = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
 const contentWidthClass = "max-w-[50rem]";
@@ -143,11 +142,9 @@ const relatedPosts = allPosts
           class:list={[contentWidthClass, "border-b border-border/45 pb-6"]}
         >
           <div
-            class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.72rem] tracking-[0.24em] text-foreground/34 uppercase"
+            class="text-[0.72rem] tracking-[0.24em] text-foreground/34 uppercase"
           >
             <span>{leadTag}</span>
-            <span class="text-foreground/18">/</span>
-            <span>{siteHost}</span>
           </div>
           <h1
             transition:name={slugifyStr(title.replaceAll(".", "-"))}
@@ -164,16 +161,9 @@ const relatedPosts = allPosts
               {formattedMetaDate}
             </time>
             <span class="text-foreground/20">·</span>
-            <span>{siteHost}</span>
-            <span class="text-foreground/20">·</span>
             <span>约 {readingStats.readingMinutes} 分钟</span>
             <span class="text-foreground/20">·</span>
             <span>{readingStats.wordCount} 字</span>
-            <span class="text-foreground/20">·</span>
-            <span id="busuanzi_container_page_pv" style="display:none;">
-              本文阅读 <span id="busuanzi_value_page_pv"></span> 次
-            </span>
-            <span id="page-pv-fallback">统计加载中</span>
           </div>
         </header>
 
@@ -441,25 +431,6 @@ const relatedPosts = allPosts
     }
   }
   attachCopyButtons();
-
-  function syncPageViews() {
-    const fallback = document.getElementById("page-pv-fallback");
-    const value = document.getElementById("busuanzi_value_page_pv");
-
-    if (!fallback || !value) return;
-
-    let attempts = 0;
-    const timer = window.setInterval(() => {
-      const ready = Boolean(value.textContent?.trim());
-      fallback.toggleAttribute("hidden", ready);
-      attempts += 1;
-
-      if (ready || attempts > 20) {
-        window.clearInterval(timer);
-      }
-    }, 250);
-  }
-  syncPageViews();
 
   document.addEventListener("astro:after-swap", () =>
     window.scrollTo({ left: 0, top: 0, behavior: "instant" })

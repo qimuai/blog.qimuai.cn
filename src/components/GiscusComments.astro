@@ -22,7 +22,6 @@ const discussionUrl =
   )}&body=${encodeURIComponent(
     `文章地址: ${pageUrl}\n\n欢迎继续补充案例、问题、勘误和后续实践。`
   )}`;
-const discussionLabel = discussion ? "进入文章讨论" : "新建文章讨论";
 ---
 
 {
@@ -36,8 +35,8 @@ const discussionLabel = discussion ? "进入文章讨论" : "新建文章讨论"
               继续把这篇文章讨论下去
             </h2>
             <p class="mt-2 max-w-2xl text-sm leading-7 text-foreground/72 sm:text-base">
-              当前评论通过 GitHub Discussions 进行。点击下方按钮后，登录 GitHub
-              就可以直接在这篇文章的专属讨论帖里留言。
+              评论托管在 GitHub Discussions。现在会优先以内嵌评论框显示，
+              如果你的网络环境阻止了加载，也可以直接跳到 GitHub 继续讨论。
             </p>
           </div>
           <a
@@ -48,12 +47,22 @@ const discussionLabel = discussion ? "进入文章讨论" : "新建文章讨论"
           </a>
         </div>
 
-        <div class="mt-8 flex flex-wrap gap-3">
+        <div
+          id="giscus-thread"
+          class="mt-8 min-h-40"
+          data-discussion-url={discussionUrl}
+        >
+          <div class="rounded-2xl border border-border/70 bg-background/55 px-4 py-5 text-sm leading-7 text-foreground/62">
+            评论加载中。如果长时间没有出现评论框，请使用下面的备用入口。
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
           <a
             href={discussionUrl}
             class="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-accent hover:text-accent"
           >
-            {discussionLabel}
+            {discussion ? "在 GitHub 中查看这篇讨论" : "创建这篇文章的讨论"}
           </a>
           <a
             href={`https://github.com/${comments.repo}/discussions`}
@@ -63,12 +72,86 @@ const discussionLabel = discussion ? "进入文章讨论" : "新建文章讨论"
           </a>
         </div>
 
-        {discussion?.url && (
+        {discussion && (
           <p class="mt-4 text-xs leading-6 text-foreground/56">
-            已为这篇文章准备专属 Discussion：#{discussion.number}
+            当前文章已关联到 Discussion：#{discussion.number}
           </p>
         )}
       </div>
     </section>
   )
 }
+
+<script
+  is:inline
+  data-astro-rerun
+  define:vars={{
+    repo: comments.repo,
+    repoId: comments.repoId,
+    category: comments.category,
+    categoryId: comments.categoryId,
+    mapping: comments.mapping,
+    strict: comments.strict,
+    reactionsEnabled: comments.reactionsEnabled,
+    emitMetadata: comments.emitMetadata,
+    inputPosition: comments.inputPosition,
+    lang: comments.lang,
+  }}
+>
+  const THREAD_ID = "giscus-thread";
+
+  function getGiscusTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark"
+      ? "dark_dimmed"
+      : "light";
+  }
+
+  function renderGiscus() {
+    const container = document.getElementById(THREAD_ID);
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.setAttribute("data-repo", repo);
+    script.setAttribute("data-repo-id", repoId);
+    script.setAttribute("data-category", category);
+    script.setAttribute("data-category-id", categoryId);
+    script.setAttribute("data-mapping", mapping);
+    script.setAttribute("data-strict", strict);
+    script.setAttribute("data-reactions-enabled", reactionsEnabled);
+    script.setAttribute("data-emit-metadata", emitMetadata);
+    script.setAttribute("data-input-position", inputPosition);
+    script.setAttribute("data-lang", lang);
+    script.setAttribute("data-theme", getGiscusTheme());
+    container.appendChild(script);
+  }
+
+  function syncGiscusTheme() {
+    const iframe = document.querySelector("iframe.giscus-frame");
+    if (!iframe || !iframe.contentWindow) return;
+
+    iframe.contentWindow.postMessage(
+      {
+        giscus: {
+          setConfig: {
+            theme: getGiscusTheme(),
+          },
+        },
+      },
+      "https://giscus.app"
+    );
+  }
+
+  function bootGiscus() {
+    renderGiscus();
+    window.setTimeout(syncGiscusTheme, 350);
+  }
+
+  bootGiscus();
+  document.addEventListener("astro:page-load", bootGiscus);
+  document.addEventListener("theme-changed", syncGiscusTheme);
+</script>

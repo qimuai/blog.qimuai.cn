@@ -15,15 +15,22 @@ const toc = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
 
 {
   toc.length > 0 && (
-    <nav aria-label="文章目录" class="reading-toc max-w-[15.5rem]">
-      <ol class="space-y-1.5 text-[0.98rem] leading-7 text-foreground/40">
+    <nav
+      aria-label="文章目录"
+      class="reading-toc max-h-[min(78vh,calc(100vh-9.5rem))] w-full max-w-none overflow-y-auto pe-2"
+    >
+      <ol class="grid gap-0.5 text-[0.9rem] leading-[1.45] text-foreground/40">
         {toc.map(heading => (
-          <li class:list={[heading.depth > 2 && "ps-4"]}>
+          <li class:list={["min-w-0", heading.depth > 2 && "ps-2.5"]}>
             <a
               href={`#${heading.slug}`}
               data-toc-link={heading.slug}
               data-active="false"
-              class="reading-toc-link block rounded-md px-3 py-1.5 text-foreground/38 transition-colors hover:bg-muted/32 hover:text-foreground"
+              class:list={[
+                "reading-toc-link block rounded-[0.65rem] px-2.5 py-1 break-words text-foreground/38 transition-colors hover:bg-muted/24 hover:text-foreground/80",
+                heading.depth > 2 &&
+                  "text-[0.84rem] leading-[1.4] text-foreground/34",
+              ]}
             >
               {heading.text}
             </a>

@@ -132,8 +132,28 @@ html[data-theme="dark"] {
     }
   }
 
+  .reading-toc {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+
   .reading-toc-link[data-active="true"] {
-    @apply bg-muted/34 text-foreground;
+    @apply bg-muted/30 text-foreground;
+    box-shadow: inset 2px 0 0
+      color-mix(in srgb, var(--color-accent) 52%, transparent);
+  }
+
+  .reading-toc::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .reading-toc::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-border) 75%, transparent);
+    border-radius: 999px;
+  }
+
+  .reading-toc::-webkit-scrollbar-track {
+    background: transparent;
   }
 }
 

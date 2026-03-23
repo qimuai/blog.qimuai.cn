@@ -47,6 +47,9 @@
             >
               打开线上文章
             </a>
+            <button id="preview-button" type="button" class="ghost-button" disabled>
+              预览效果
+            </button>
             <button id="save-button" type="button" class="primary-button" disabled>
               保存并发布
             </button>
@@ -132,7 +135,66 @@
             </label>
           </section>
         </section>
+
+        <section id="preview-panel" class="preview-panel" hidden>
+          <div class="preview-panel-header">
+            <div>
+              <p class="eyebrow">保存前预览</p>
+              <h3>先看一眼排版效果</h3>
+            </div>
+            <button id="preview-close-button" type="button" class="ghost-button">
+              收起预览
+            </button>
+          </div>
+          <article class="preview-article">
+            <header class="preview-hero">
+              <p id="preview-kicker" class="preview-kicker">文章预览</p>
+              <h1 id="preview-title">标题会显示在这里</h1>
+              <p id="preview-meta" class="preview-meta">作者 · 发布时间 · 标签</p>
+              <p id="preview-description" class="preview-description"></p>
+            </header>
+            <div id="preview-content" class="preview-content"></div>
+          </article>
+        </section>
       </main>
+    </div>
+
+    <div id="draft-modal" class="modal-shell" hidden>
+      <div class="modal-backdrop" data-close-modal="true"></div>
+      <section class="modal-card" aria-labelledby="draft-modal-title">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">新建草稿</p>
+            <h2 id="draft-modal-title">先写标题，再确认 slug</h2>
+          </div>
+          <button id="draft-cancel-button" type="button" class="ghost-button">取消</button>
+        </div>
+
+        <div class="modal-grid">
+          <label class="meta-field meta-field-full">
+            <span>文章标题</span>
+            <input id="draft-title-input" type="text" placeholder="比如：关于这个博客的第一篇文章" />
+          </label>
+
+          <label class="meta-field meta-field-full">
+            <span>Slug</span>
+            <input
+              id="draft-slug-input"
+              type="text"
+              placeholder="自动生成，也可以自己改"
+              spellcheck="false"
+            />
+          </label>
+        </div>
+
+        <div id="draft-modal-status" class="draft-modal-status"></div>
+
+        <div class="modal-actions">
+          <button id="draft-confirm-button" type="button" class="primary-button">
+            创建草稿
+          </button>
+        </div>
+      </section>
     </div>
 
     <script type="module" src="/admin/app.js?v=20260324b"></script>

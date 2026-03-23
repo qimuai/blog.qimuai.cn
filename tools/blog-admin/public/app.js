@@ -7,6 +7,7 @@ const searchInputElement = document.getElementById("search-input");
 const refreshButtonElement = document.getElementById("refresh-button");
 const createButtonElement = document.getElementById("create-button");
 const saveButtonElement = document.getElementById("save-button");
+const previewButtonElement = document.getElementById("preview-button");
 const editorTextareaElement = document.getElementById("editor-textarea");
 const openPostLinkElement = document.getElementById("open-post-link");
 const metaTitleElement = document.getElementById("meta-title");
@@ -16,6 +17,19 @@ const metaTagsElement = document.getElementById("meta-tags");
 const metaDescriptionElement = document.getElementById("meta-description");
 const metaDraftElement = document.getElementById("meta-draft");
 const metaSlugElement = document.getElementById("meta-slug");
+const previewPanelElement = document.getElementById("preview-panel");
+const previewCloseButtonElement = document.getElementById("preview-close-button");
+const previewTitleElement = document.getElementById("preview-title");
+const previewMetaElement = document.getElementById("preview-meta");
+const previewDescriptionElement = document.getElementById("preview-description");
+const previewContentElement = document.getElementById("preview-content");
+const previewKickerElement = document.getElementById("preview-kicker");
+const draftModalElement = document.getElementById("draft-modal");
+const draftTitleInputElement = document.getElementById("draft-title-input");
+const draftSlugInputElement = document.getElementById("draft-slug-input");
+const draftStatusElement = document.getElementById("draft-modal-status");
+const draftCancelButtonElement = document.getElementById("draft-cancel-button");
+const draftConfirmButtonElement = document.getElementById("draft-confirm-button");
 
 const apiBasePath = "/admin/api/posts";
 const managedFrontmatterFields = ["title", "author", "pubDatetime", "description", "draft"];
@@ -33,9 +47,43 @@ let posts = [];
 let selectedPost = null;
 let lastSerializedContent = "";
 let preservedFrontmatter = "";
+let previewOpen = false;
+let slugTouched = false;
 
 function yamlString(value) {
   return JSON.stringify(String(value ?? ""));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function slugifyTitle(title) {
+  const asciiSlug = title
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (asciiSlug) return asciiSlug;
+
+  const now = new Date();
+  const timestamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+  return `draft-${timestamp}`;
 }
 
 function splitRawContent(rawContent) {
@@ -109,25 +157,6 @@ function serializeCurrentPost() {
     : `---\n${fullFrontmatter}\n---\n`;
 }
 
-function resetEditor() {
-  selectedPost = null;
-  preservedFrontmatter = "";
-  lastSerializedContent = "";
-  editorTitleElement.textContent = "选择左侧文章开始编辑";
-  editorMetaElement.textContent = "支持快捷键 Ctrl/Cmd + S 保存。";
-  openPostLinkElement.href = "https://blog.qimuai.cn";
-  metaTitleElement.value = "";
-  metaAuthorElement.value = "";
-  metaPubDatetimeElement.value = "";
-  metaTagsElement.value = "";
-  metaDescriptionElement.value = "";
-  metaDraftElement.checked = false;
-  metaSlugElement.textContent = "-";
-  editorTextareaElement.value = "";
-  setEditorEnabled(false);
-  updateDirtyState();
-}
-
 function setStatus(message, tone = "info") {
   if (!message) {
     statusBannerElement.hidden = true;
@@ -146,6 +175,27 @@ function setEditorEnabled(enabled) {
     element.disabled = !enabled;
   });
   saveButtonElement.disabled = !enabled;
+  previewButtonElement.disabled = !enabled;
+}
+
+function resetEditor() {
+  selectedPost = null;
+  preservedFrontmatter = "";
+  lastSerializedContent = "";
+  editorTitleElement.textContent = "选择左侧文章开始编辑";
+  editorMetaElement.textContent = "支持快捷键 Ctrl/Cmd + S 保存。";
+  openPostLinkElement.href = "https://blog.qimuai.cn";
+  metaTitleElement.value = "";
+  metaAuthorElement.value = "";
+  metaPubDatetimeElement.value = "";
+  metaTagsElement.value = "";
+  metaDescriptionElement.value = "";
+  metaDraftElement.checked = false;
+  metaSlugElement.textContent = "-";
+  editorTextareaElement.value = "";
+  setEditorEnabled(false);
+  closePreview();
+  updateDirtyState();
 }
 
 function formatPostMeta(post) {
@@ -172,6 +222,11 @@ function updateDirtyState() {
   const dirty = selectedPost && serializeCurrentPost() !== lastSerializedContent;
   saveButtonElement.textContent = dirty ? "保存并发布" : "已同步";
   saveButtonElement.disabled = !selectedPost || !dirty;
+  previewButtonElement.disabled = !selectedPost;
+
+  if (previewOpen) {
+    renderPreview();
+  }
 }
 
 function renderPostList() {
@@ -217,6 +272,188 @@ async function apiFetch(pathname, options = {}) {
   }
 
   return data;
+}
+
+function renderInlineMarkdown(value) {
+  const codeTokens = [];
+  let output = escapeHtml(value).replace(/`([^`]+)`/g, (_, code) => {
+    const token = `__CODE_${codeTokens.length}__`;
+    codeTokens.push(`<code>${escapeHtml(code)}</code>`);
+    return token;
+  });
+
+  output = output.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_match, text, url) => {
+    return `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(text)}</a>`;
+  });
+  output = output.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  output = output.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+  codeTokens.forEach((html, index) => {
+    output = output.replace(`__CODE_${index}__`, html);
+  });
+
+  return output;
+}
+
+function renderMarkdownToHtml(markdown) {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const blocks = [];
+  let paragraphLines = [];
+  let listItems = [];
+  let listType = "";
+  let quoteLines = [];
+  let codeLines = [];
+  let codeLanguage = "";
+  let inCodeBlock = false;
+
+  function flushParagraph() {
+    if (!paragraphLines.length) return;
+    blocks.push(`<p>${renderInlineMarkdown(paragraphLines.join(" "))}</p>`);
+    paragraphLines = [];
+  }
+
+  function flushList() {
+    if (!listItems.length) return;
+    const tag = listType === "ol" ? "ol" : "ul";
+    blocks.push(`<${tag}>${listItems.join("")}</${tag}>`);
+    listItems = [];
+    listType = "";
+  }
+
+  function flushQuote() {
+    if (!quoteLines.length) return;
+    blocks.push(`<blockquote><p>${renderInlineMarkdown(quoteLines.join(" "))}</p></blockquote>`);
+    quoteLines = [];
+  }
+
+  function flushCode() {
+    if (!inCodeBlock) return;
+    const languageClass = codeLanguage ? ` class="language-${escapeHtml(codeLanguage)}"` : "";
+    blocks.push(
+      `<pre><code${languageClass}>${escapeHtml(codeLines.join("\n"))}</code></pre>`
+    );
+    codeLines = [];
+    codeLanguage = "";
+    inCodeBlock = false;
+  }
+
+  function flushAllTextBlocks() {
+    flushParagraph();
+    flushList();
+    flushQuote();
+  }
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
+      if (inCodeBlock) {
+        flushCode();
+      } else {
+        flushAllTextBlocks();
+        inCodeBlock = true;
+        codeLanguage = trimmed.slice(3).trim();
+      }
+      return;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(line);
+      return;
+    }
+
+    if (!trimmed) {
+      flushAllTextBlocks();
+      return;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      flushAllTextBlocks();
+      const level = headingMatch[1].length;
+      blocks.push(`<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`);
+      return;
+    }
+
+    if (/^---+$/.test(trimmed) || /^___+$/.test(trimmed)) {
+      flushAllTextBlocks();
+      blocks.push("<hr />");
+      return;
+    }
+
+    const quoteMatch = trimmed.match(/^>\s?(.*)$/);
+    if (quoteMatch) {
+      flushParagraph();
+      flushList();
+      quoteLines.push(quoteMatch[1]);
+      return;
+    }
+
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      flushQuote();
+      if (listType && listType !== "ol") flushList();
+      listType = "ol";
+      listItems.push(`<li>${renderInlineMarkdown(orderedMatch[1])}</li>`);
+      return;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (unorderedMatch) {
+      flushParagraph();
+      flushQuote();
+      if (listType && listType !== "ul") flushList();
+      listType = "ul";
+      listItems.push(`<li>${renderInlineMarkdown(unorderedMatch[1])}</li>`);
+      return;
+    }
+
+    flushList();
+    flushQuote();
+    paragraphLines.push(trimmed);
+  });
+
+  flushAllTextBlocks();
+  flushCode();
+
+  return blocks.join("\n");
+}
+
+function renderPreview() {
+  if (!selectedPost) return;
+
+  const tags = parseTagsInput(metaTagsElement.value);
+  const metadataBits = [
+    metaAuthorElement.value.trim() || "Aaron",
+    metaPubDatetimeElement.value.trim() || "未填写发布时间",
+  ];
+
+  if (tags.length) {
+    metadataBits.push(tags.join(" · "));
+  }
+
+  previewKickerElement.textContent = metaDraftElement.checked ? "草稿预览" : "文章预览";
+  previewTitleElement.textContent = metaTitleElement.value.trim() || "未命名文章";
+  previewMetaElement.textContent = metadataBits.join(" · ");
+  previewDescriptionElement.textContent = metaDescriptionElement.value.trim();
+  previewDescriptionElement.hidden = !previewDescriptionElement.textContent;
+  previewContentElement.innerHTML = renderMarkdownToHtml(editorTextareaElement.value.trim());
+}
+
+function openPreview() {
+  if (!selectedPost) return;
+  previewOpen = true;
+  previewPanelElement.hidden = false;
+  previewButtonElement.textContent = "刷新预览";
+  renderPreview();
+  previewPanelElement.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closePreview() {
+  previewOpen = false;
+  previewPanelElement.hidden = true;
+  previewButtonElement.textContent = "预览效果";
 }
 
 function populateEditor(post) {
@@ -298,14 +535,38 @@ async function saveCurrentPost() {
   }
 }
 
+function openDraftModal() {
+  draftModalElement.hidden = false;
+  draftTitleInputElement.value = "";
+  draftSlugInputElement.value = "";
+  draftStatusElement.textContent = "";
+  slugTouched = false;
+  draftTitleInputElement.focus();
+}
+
+function closeDraftModal() {
+  draftModalElement.hidden = true;
+  draftStatusElement.textContent = "";
+}
+
 async function createDraftPost() {
-  const slug = window.prompt("请输入新文章的 slug（只用英文、数字和短横线）");
-  if (!slug) return;
+  const slug = draftSlugInputElement.value.trim();
+  const title = draftTitleInputElement.value.trim();
 
-  const title = window.prompt("请输入文章标题");
-  if (!title) return;
+  if (!title) {
+    draftStatusElement.textContent = "先写标题，再创建草稿。";
+    draftTitleInputElement.focus();
+    return;
+  }
 
-  createButtonElement.disabled = true;
+  if (!slug) {
+    draftStatusElement.textContent = "请确认 slug。";
+    draftSlugInputElement.focus();
+    return;
+  }
+
+  draftConfirmButtonElement.disabled = true;
+  draftStatusElement.textContent = "正在创建草稿…";
   setStatus("正在创建草稿文章…", "info");
 
   try {
@@ -314,22 +575,44 @@ async function createDraftPost() {
       body: JSON.stringify({ slug, title }),
     });
 
+    closeDraftModal();
     await loadPosts(data.post.slug);
     setStatus(
       `草稿已创建并推送，提交号 ${data.commitSha}。你现在可以直接编辑它。`,
       "success"
     );
   } catch (error) {
+    draftStatusElement.textContent = error.message || "创建草稿失败";
     setStatus(error.message || "创建草稿失败", "error");
   } finally {
-    createButtonElement.disabled = false;
+    draftConfirmButtonElement.disabled = false;
   }
 }
 
 searchInputElement.addEventListener("input", renderPostList);
 refreshButtonElement.addEventListener("click", () => loadPosts(selectedPost?.slug));
-createButtonElement.addEventListener("click", createDraftPost);
+createButtonElement.addEventListener("click", openDraftModal);
 saveButtonElement.addEventListener("click", saveCurrentPost);
+previewButtonElement.addEventListener("click", openPreview);
+previewCloseButtonElement.addEventListener("click", closePreview);
+draftCancelButtonElement.addEventListener("click", closeDraftModal);
+draftConfirmButtonElement.addEventListener("click", createDraftPost);
+draftModalElement.addEventListener("click", event => {
+  if (event.target?.dataset?.closeModal === "true") {
+    closeDraftModal();
+  }
+});
+
+draftTitleInputElement.addEventListener("input", () => {
+  if (!slugTouched) {
+    draftSlugInputElement.value = slugifyTitle(draftTitleInputElement.value);
+  }
+});
+
+draftSlugInputElement.addEventListener("input", () => {
+  slugTouched = true;
+});
+
 formElements.forEach(element => {
   const eventName = element.type === "checkbox" ? "change" : "input";
   element.addEventListener(eventName, updateDirtyState);

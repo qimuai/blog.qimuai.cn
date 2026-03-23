@@ -13,9 +13,11 @@ const { pathname } = Astro.url;
 // Remove trailing slash from current pathname if exists
 const currentPath =
   pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
+const currentPathArray = currentPath.split("/").filter(p => p.trim());
+const isPostPage =
+  currentPathArray[0] === "posts" && currentPathArray.length > 1;
 
 const isActive = (path: string) => {
-  const currentPathArray = currentPath.split("/").filter(p => p.trim());
   const pathArray = path.split("/").filter(p => p.trim());
 
   return currentPath === path || currentPathArray[0] === pathArray[0];
@@ -36,7 +38,7 @@ const isActive = (path: string) => {
   <div
     id="top-nav-wrap"
     class:list={[
-      "py-4 sm:py-6",
+      isPostPage ? "py-3 sm:py-4" : "py-4 sm:py-6",
       "border-b border-border/70",
       "relative w-full bg-background",
       "flex items-baseline justify-between sm:items-center",
@@ -44,7 +46,10 @@ const isActive = (path: string) => {
   >
     <a
       href="/"
-      class="absolute py-1 font-display text-xl leading-8 font-semibold tracking-[0.08em] whitespace-nowrap sm:static sm:my-auto sm:text-3xl sm:leading-none"
+      class:list={[
+        "absolute py-1 font-display leading-none font-semibold tracking-[0.08em] whitespace-nowrap sm:static sm:my-auto",
+        isPostPage ? "text-lg sm:text-[1.7rem]" : "text-xl sm:text-3xl",
+      ]}
     >
       {SITE.title}
     </a>

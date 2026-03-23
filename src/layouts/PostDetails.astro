@@ -44,6 +44,7 @@ const pageUrl = new URL(pagePath, Astro.site).href;
 const siteHost = new URL(SITE.website).hostname;
 const leadTag = tags.at(0) ?? "文章";
 const tocHeadings = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
+const contentWidthClass = "max-w-[46rem]";
 
 const formattedMetaDate = new Intl.DateTimeFormat("en-US", {
   month: "long",
@@ -135,36 +136,37 @@ const relatedPosts = allPosts
       </aside>
 
       <div class="min-w-0">
-        <header class="max-w-4xl border-b border-border/60 pb-8">
-          <div class="flex flex-wrap items-center gap-3 text-xs">
-            <span class="section-kicker">{leadTag}</span>
-            <span class="text-foreground/30">/</span>
-            <span class="text-foreground/48">{siteHost}</span>
+        <header
+          class:list={[contentWidthClass, "border-b border-border/45 pb-6"]}
+        >
+          <div
+            class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.72rem] tracking-[0.24em] text-foreground/34 uppercase"
+          >
+            <span>{leadTag}</span>
+            <span class="text-foreground/18">/</span>
+            <span>{siteHost}</span>
           </div>
           <h1
             transition:name={slugifyStr(title.replaceAll(".", "-"))}
-            class="mt-5 max-w-4xl font-display text-4xl leading-[1.12] font-semibold text-foreground sm:text-5xl"
+            class="mt-4 font-display text-[2.45rem] leading-[1.08] font-medium tracking-[-0.02em] text-foreground sm:text-[3.4rem]"
           >
             {title}
           </h1>
           <div
-            class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-base text-foreground/62 sm:text-lg"
+            class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-foreground/48 sm:text-[0.98rem]"
           >
             <span>{author}</span>
-            <span class="text-foreground/28">·</span>
+            <span class="text-foreground/20">·</span>
             <time datetime={new Date(pubDatetime).toISOString()}>
               {formattedMetaDate}
             </time>
-            <span class="text-foreground/28">·</span>
+            <span class="text-foreground/20">·</span>
             <span>{siteHost}</span>
-          </div>
-          <div
-            class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-foreground/46"
-          >
+            <span class="text-foreground/20">·</span>
             <span>约 {readingStats.readingMinutes} 分钟</span>
-            <span class="text-foreground/24">·</span>
+            <span class="text-foreground/20">·</span>
             <span>{readingStats.wordCount} 字</span>
-            <span class="text-foreground/24">·</span>
+            <span class="text-foreground/20">·</span>
             <span id="busuanzi_container_page_pv" style="display:none;">
               本文阅读 <span id="busuanzi_value_page_pv"></span> 次
             </span>
@@ -174,12 +176,20 @@ const relatedPosts = allPosts
 
         <article
           id="article"
-          class="app-prose mt-12 w-full max-w-4xl prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+          class:list={[
+            "app-prose mt-10 w-full prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)",
+            contentWidthClass,
+          ]}
         >
           <Content />
         </article>
 
-        <section class="mt-10 max-w-4xl border-t border-border/45 pt-5">
+        <section
+          class:list={[
+            contentWidthClass,
+            "mt-10 border-t border-border/42 pt-5",
+          ]}
+        >
           <ul class="flex flex-wrap gap-3">
             {
               tags.map(tag => (
@@ -199,7 +209,10 @@ const relatedPosts = allPosts
         {
           relatedPosts.length > 0 && (
             <section
-              class="mt-12 max-w-4xl border-t border-border/38 pt-5"
+              class:list={[
+                contentWidthClass,
+                "mt-12 border-t border-border/34 pt-5",
+              ]}
               data-pagefind-ignore
             >
               <div class="flex flex-wrap items-center justify-between gap-3">
@@ -235,7 +248,10 @@ const relatedPosts = allPosts
         }
 
         <div
-          class="mt-8 flex max-w-4xl flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/32 pt-4 text-sm text-foreground/42"
+          class:list={[
+            contentWidthClass,
+            "mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/28 pt-4 text-sm text-foreground/38",
+          ]}
           data-pagefind-ignore
         >
           {
@@ -254,7 +270,7 @@ const relatedPosts = allPosts
           }
         </div>
 
-        <div class="max-w-4xl">
+        <div class={contentWidthClass}>
           <GiscusComments
             pagePath={pagePath}
             pageTitle={title}

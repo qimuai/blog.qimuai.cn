@@ -1,7 +1,7 @@
 ---
 title: "国内无痛调用GPT-5\\Claude-4.5的官方API绝对不会封号官方都拿你没办法"
 author: "齐木"
-pubDatetime: "2025-10-20T11:04:00+08:00"
+pubDatetime: 2025-10-20T11:04:00+08:00
 description: "最近是不是又被GPT 5和Claude 4.5的强大能力刷屏了？写代码、改文案、做分析…… 那叫一个丝滑。 但爽归爽，一个老大难问题始终悬在咱们国内用户头上： 封号！封号！还是TMD封号！ OpenAI和Anthropic对咱们这边的网络环..."
 tags:
   - "API"

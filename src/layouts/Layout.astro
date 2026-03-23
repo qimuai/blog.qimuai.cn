@@ -131,7 +131,7 @@ const structuredData = pubDatetime
       href={new URL("rss.xml", Astro.site)}
     />
 
-    <meta name="theme-color" content="#f7f3ea" />
+    <meta name="theme-color" content="#fefbfb" />
 
     {
       // If PUBLIC_GOOGLE_SITE_VERIFICATION is set in the environment variable,
@@ -150,8 +150,10 @@ const structuredData = pubDatetime
     <!-- Minimal inline script to prevent FOUC - sets theme immediately -->
     <script is:inline>
       (function () {
-        const initialColorScheme = ""; // "light" | "dark"
-        const currentTheme = localStorage.getItem("theme");
+        const LIGHT = "light";
+        const THEME_STORAGE_KEY = "theme-v2";
+        const initialColorScheme = LIGHT; // "light" | "dark"
+        const currentTheme = localStorage.getItem(THEME_STORAGE_KEY);
 
         function getPreferTheme() {
           if (currentTheme) return currentTheme;
@@ -169,6 +171,7 @@ const structuredData = pubDatetime
         // Export minimal API for external script
         window.theme = {
           themeValue: themeValue,
+          storageKey: THEME_STORAGE_KEY,
           getTheme: () => window.theme.themeValue,
           setTheme: val => {
             window.theme.themeValue = val;

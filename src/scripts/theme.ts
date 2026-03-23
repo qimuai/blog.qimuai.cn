@@ -1,11 +1,11 @@
 // Constants
-const THEME = "theme";
+const THEME = "theme-v2";
 const LIGHT = "light";
 const DARK = "dark";
 
 // Initial color scheme
 // Can be "light", "dark", or empty string for system's prefers-color-scheme
-const initialColorScheme = "";
+const initialColorScheme = LIGHT;
 
 function getPreferTheme(): string {
   // get theme data from local storage (user's explicit choice)
@@ -112,11 +112,16 @@ document.addEventListener("astro:before-swap", event => {
   }
 });
 
-// sync with system changes
-window
-  .matchMedia("(prefers-color-scheme: dark)")
-  .addEventListener("change", ({ matches: isDark }) => {
-    themeValue = isDark ? DARK : LIGHT;
-    window.theme?.setTheme(themeValue);
-    setPreference();
-  });
+// Sync with system changes only when the site has no explicit default
+// and the visitor hasn't chosen a theme manually.
+if (!initialColorScheme) {
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", ({ matches: isDark }) => {
+      if (localStorage.getItem(THEME)) return;
+
+      themeValue = isDark ? DARK : LIGHT;
+      window.theme?.setTheme(themeValue);
+      reflectPreference();
+    });
+}

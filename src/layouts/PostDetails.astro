@@ -44,7 +44,7 @@ const pageUrl = new URL(pagePath, Astro.site).href;
 const siteHost = new URL(SITE.website).hostname;
 const leadTag = tags.at(0) ?? "文章";
 const tocHeadings = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
-const contentWidthClass = "max-w-[46rem]";
+const contentWidthClass = "max-w-[50rem]";
 
 const formattedMetaDate = new Intl.DateTimeFormat("en-US", {
   month: "long",
@@ -122,14 +122,16 @@ const relatedPosts = allPosts
   <main
     id="main-content"
     class:list={[
-      "wide-layout pb-16",
+      "wide-layout pb-16 xl:max-w-[88rem] 2xl:max-w-[92rem]",
       { "mt-10": !SITE.showBackButton, "mt-4": SITE.showBackButton },
     ]}
     data-pagefind-body
   >
-    <div class="grid gap-10 xl:grid-cols-[220px_minmax(0,1fr)] xl:gap-16">
+    <div
+      class="grid gap-10 xl:grid-cols-[16rem_minmax(0,50rem)] xl:gap-24 2xl:grid-cols-[17rem_minmax(0,52rem)] 2xl:gap-28"
+    >
       <aside
-        class="hidden xl:sticky xl:top-24 xl:block xl:self-start xl:pt-28"
+        class="hidden xl:sticky xl:top-28 xl:block xl:self-start xl:pt-24"
         data-pagefind-ignore
       >
         <TableOfContents headings={tocHeadings} />

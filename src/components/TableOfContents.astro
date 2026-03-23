@@ -15,16 +15,15 @@ const toc = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
 
 {
   toc.length > 0 && (
-    <nav aria-label="文章目录" class="reading-toc">
-      <p class="section-kicker">目录</p>
-      <ol class="mt-4 space-y-1 text-sm leading-6">
+    <nav aria-label="文章目录" class="reading-toc max-w-[15.5rem]">
+      <ol class="space-y-1.5 text-[0.98rem] leading-7 text-foreground/40">
         {toc.map(heading => (
           <li class:list={[heading.depth > 2 && "ps-4"]}>
             <a
               href={`#${heading.slug}`}
               data-toc-link={heading.slug}
               data-active="false"
-              class="reading-toc-link block rounded-md px-3 py-2 text-foreground/42 transition-colors hover:bg-muted/38 hover:text-foreground"
+              class="reading-toc-link block rounded-md px-3 py-1.5 text-foreground/38 transition-colors hover:bg-muted/32 hover:text-foreground"
             >
               {heading.text}
             </a>

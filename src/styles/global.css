@@ -133,7 +133,7 @@ html[data-theme="dark"] {
   }
 
   .reading-toc-link[data-active="true"] {
-    @apply bg-muted/42 text-foreground;
+    @apply bg-muted/34 text-foreground;
   }
 }
 

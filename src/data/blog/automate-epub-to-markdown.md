@@ -4,6 +4,8 @@ pubDatetime: 2025-09-03T15:56:53Z
 title: "如何利用脚本尽量将epub2md自动化？"
 draft: false
 tags: []
+legacyPaths:
+  - "/posts/news-476"
 description: "有些书过于经典，因此我想将epub格式的书籍转换成markdown格式，放在Obsidian或者其他支持markdown格式的软件里进行渐进式总结阅读、编辑消化以及后期搜索，因此就有了这个项目。 如果书籍不是epub格式，首先我们需要将其格..."
 ---
 

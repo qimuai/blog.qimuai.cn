@@ -62,11 +62,22 @@ function collectPosts(dir, parentSegments = []) {
     const fileContent = readFileSync(fullPath, "utf8");
     const titleMatch = fileContent.match(/^title:\s*(.+)$/m);
     const rawTitle = titleMatch?.[1]?.trim().replace(/^['"]|['"]$/g, "");
+    const legacyPathsBlock = fileContent.match(
+      /^legacyPaths:\n((?:\s+-\s+.+\n?)*)/m
+    );
+    const legacyPaths = legacyPathsBlock
+      ? legacyPathsBlock[1]
+          .split("\n")
+          .map(line => line.match(/^\s+-\s+(.+)$/)?.[1] ?? "")
+          .map(path => path.trim().replace(/^['"]|['"]$/g, ""))
+          .filter(Boolean)
+      : [];
     const slug = slugifyStr(entry.name.replace(/\.md$/, ""));
     const pagePath = ["/posts", ...parentSegments, slug].join("/");
 
     posts.push({
       pagePath,
+      legacyPaths,
       title: rawTitle ?? slug,
       url: `${SITE_URL}${pagePath}/`,
     });
@@ -128,6 +139,43 @@ const mapping = {};
 
 for (const post of posts) {
   let discussion = existing.get(post.pagePath);
+  const legacyDiscussion =
+    discussion ??
+    post.legacyPaths.map(path => existing.get(path)).find(Boolean);
+
+  if (!discussion && legacyDiscussion) {
+    const nextTitle = `[ ${post.pagePath} ] ${post.title}`;
+    const nextBody = `文章地址: ${post.url}\n\n这是文章对应的 Discussion，欢迎继续补充案例、问题、勘误和后续实践。`;
+
+    const updated = await graphql(
+      `
+        mutation UpdateDiscussion(
+          $discussionId: ID!
+          $title: String!
+          $body: String!
+        ) {
+          updateDiscussion(
+            input: { discussionId: $discussionId, title: $title, body: $body }
+          ) {
+            discussion {
+              id
+              number
+              title
+              url
+            }
+          }
+        }
+      `,
+      {
+        discussionId: legacyDiscussion.id,
+        title: nextTitle,
+        body: nextBody,
+      }
+    );
+
+    discussion = updated.updateDiscussion.discussion;
+    existing.set(post.pagePath, discussion);
+  }
 
   if (!discussion) {
     const created = await graphql(

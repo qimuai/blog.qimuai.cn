@@ -1,4 +1,14 @@
 {
+  "/posts/automate-epub-to-markdown": {
+    "number": 16,
+    "title": "[ /posts/automate-epub-to-markdown ] 如何利用脚本尽量将epub2md自动化？",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/16"
+  },
+  "/posts/crawl-a-whole-site-with-claude-code": {
+    "number": 15,
+    "title": "[ /posts/crawl-a-whole-site-with-claude-code ] 用Claude Code，十分钟爬取整个网站",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/15"
+  },
   "/posts/deploying-blog-qimuai-cn-with-astropaper": {
     "number": 7,
     "title": "[ /posts/deploying-blog-qimuai-cn-with-astropaper ] 用 AstroPaper 重建 blog.qimuai.cn",
@@ -8,5 +18,55 @@
     "number": 6,
     "title": "[ /posts/hello-qimuai-blog ] blog.qimuai.cn 正式上线",
     "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/6"
+  },
+  "/posts/lovable-ai-programming-guide": {
+    "number": 8,
+    "title": "[ /posts/lovable-ai-programming-guide ] 【官方教程】lovable AI编程指南",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/8"
+  },
+  "/posts/n8n-01-self-hosting-and-updates": {
+    "number": 18,
+    "title": "[ /posts/n8n-01-self-hosting-and-updates ] 1. 如何自部署、更新n8n（附免费使用方式）",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/18"
+  },
+  "/posts/n8n-02-why-you-should-use-n8n": {
+    "number": 19,
+    "title": "[ /posts/n8n-02-why-you-should-use-n8n ] 2. AI都来了，你还没用过n8n？聊聊这个让我爽翻的效率神器",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/19"
+  },
+  "/posts/obsidian-00-official-guide-notes": {
+    "number": 13,
+    "title": "[ /posts/obsidian-00-official-guide-notes ] 00-【笔记】Obsidian 官方使用指南",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/13"
+  },
+  "/posts/obsidian-01-more-than-a-note-app": {
+    "number": 9,
+    "title": "[ /posts/obsidian-01-more-than-a-note-app ] 01 解放你的思维：Obsidian，不只是一款笔记软件",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/9"
+  },
+  "/posts/obsidian-02-image-management-guide": {
+    "number": 10,
+    "title": "[ /posts/obsidian-02-image-management-guide ] 02 【手把手】Obsidian图片管理神器，9元解决所有烦恼！",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/10"
+  },
+  "/posts/obsidian-03-web-viewer-guide": {
+    "number": 11,
+    "title": "[ /posts/obsidian-03-web-viewer-guide ] 03「深度探索」Obsidian新版重磅功能:内置浏览器+AI对话,这才是笔记该有的样子",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/11"
+  },
+  "/posts/quit-short-video-addiction": {
+    "number": 17,
+    "title": "[ /posts/quit-short-video-addiction ] 如何用一招，治好短视频上瘾",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/17"
+  },
+  "/posts/welcome-to-ai-creative-writing": {
+    "number": 12,
+    "title": "[ /posts/welcome-to-ai-creative-writing ] 借AI妙笔，生文章之花，欢迎来到AI创意写作第一站",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/12"
+  },
+  "/posts/why-most-ai-agents-are-workflows": {
+    "number": 14,
+    "title": "[ /posts/why-most-ai-agents-are-workflows ] 市面上99%的智能体，都是工作流",
+    "url": "https://github.com/qimuai/blog.qimuai.cn/discussions/14"
   }
 }

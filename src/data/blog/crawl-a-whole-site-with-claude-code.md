@@ -6,6 +6,8 @@ draft: false
 tags:
   - "AI智能体"
   - "claude"
+legacyPaths:
+  - "/posts/news-406"
 description: "事情是这样的，最近几天我在研究n8n，于是就想先把官方的文档全部爬下来，然后写一个程序来，自动进行翻译后，一个个实操。 这就是我的学习方式，虽然慢，但学得扎实。 这个事情如果让cursor等传统AI编程工具来做，就得先写一个python脚本..."
 ---
 

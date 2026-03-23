@@ -4,6 +4,8 @@ pubDatetime: 2025-09-03T22:44:58Z
 title: "1. 如何自部署、更新n8n（附免费使用方式）"
 draft: false
 tags: []
+legacyPaths:
+  - "/posts/news-500"
 description: "很多人都知道n8n很火，但是不知道怎么使用。一个很简单的办法是，使用官方云托管提供的服务，这个简单，只要注册账号、登录、付款（也有免费额度）就可以直接使用了。 https://app.n8n.cloud/login 如果要自己部署， 对于小..."
 ---
 

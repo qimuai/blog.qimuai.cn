@@ -4,6 +4,8 @@ pubDatetime: 2025-10-07T11:26:55Z
 title: "【官方教程】lovable AI编程指南"
 draft: false
 tags: []
+legacyPaths:
+  - "/posts/news-1372"
 description: "Prompting 1.1：提示工程指南 提示结构、提示层级、元 / 反向元提示，以及带示例的基础策略。 前言 为了帮助您充分利用 Lovable，我们整理了一系列提示策略和方法。其中一些来自我们团队的经验，另一些则由社区成员分享。由于 L..."
 ---
 

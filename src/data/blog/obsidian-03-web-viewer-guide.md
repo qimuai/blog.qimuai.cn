@@ -5,6 +5,8 @@ title: "03「深度探索」Obsidian新版重磅功能:内置浏览器+AI对话,
 draft: false
 tags:
   - "笔记神器"
+legacyPaths:
+  - "/posts/news-214"
 description: "颇受欢迎的本地笔记软件Obsidian最近更新了一个重大版本V1.8.4，这个版本中，最大的更新项目： Web viewer 如字面意思所呈现的，这是一个网页浏览插件，也就是在Obsidian内部，内置了一个浏览器，可以随时打开任何网页界面..."
 ---
 

@@ -5,6 +5,8 @@ title: "02 【手把手】Obsidian图片管理神器，9元解决所有烦恼！
 draft: false
 tags:
   - "笔记神器"
+legacyPaths:
+  - "/posts/news-213"
 description: "Markdown最大的弊端在于，它对于图片的处理能力有限。 图片存储与管理 Markdown文件本质上是纯文本文件，图片需要单独存储在本地或远程服务器上。用户需要手动管理图片的存储路径和文件名，容易导致路径混乱或图片丢失。 图片路径问题 即..."
 ---
 

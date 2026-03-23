@@ -5,7 +5,8 @@ import getSortedPosts from "@/utils/getSortedPosts";
 import { getPath } from "@/utils/getPath";
 
 type Props = {
-  post: CollectionEntry<"blog">;
+  post?: CollectionEntry<"blog">;
+  redirectTo?: string;
 };
 
 export async function getStaticPaths() {
@@ -15,13 +16,49 @@ export async function getStaticPaths() {
     props: { post },
   }));
 
-  return postResult;
+  const redirectResults = posts.flatMap(post => {
+    const redirectTo = getPath(post.id, post.filePath, false);
+
+    return (post.data.legacyPaths ?? []).map(path => ({
+      params: {
+        slug: path
+          .replace(/^\/+/, "")
+          .replace(/^posts\/?/, "")
+          .replace(/\/+$/, ""),
+      },
+      props: { redirectTo },
+    }));
+  });
+
+  return [...postResult, ...redirectResults];
 }
 
-const { post } = Astro.props;
+const { post, redirectTo } = Astro.props;
 
-const posts = await getCollection("blog");
-const sortedPosts = getSortedPosts(posts);
+const posts = post ? await getCollection("blog") : [];
+const sortedPosts = post ? getSortedPosts(posts) : [];
 ---
 
-<PostDetails post={post} posts={sortedPosts} />
+{
+  redirectTo ? (
+    <html lang="zh-CN">
+      <head>
+        <meta charset="utf-8" />
+        <title>页面已迁移</title>
+        <meta name="robots" content="noindex,follow" />
+        <meta http-equiv="refresh" content={`0;url=${redirectTo}/`} />
+        <link rel="canonical" href={`https://blog.qimuai.cn${redirectTo}/`} />
+        <script is:inline define:vars={{ redirectPath: `${redirectTo}/` }}>
+          window.location.replace(redirectPath);
+        </script>
+      </head>
+      <body>
+        <p>
+          页面已迁移，正在跳转到 <a href={`${redirectTo}/`}>{redirectTo}/</a>
+        </p>
+      </body>
+    </html>
+  ) : post ? (
+    <PostDetails post={post} posts={sortedPosts} />
+  ) : null
+}

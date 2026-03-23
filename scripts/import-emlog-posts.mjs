@@ -1,13 +1,52 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_POST_IDS = [
   478, 476, 405, 214, 213, 212, 37, 3, 502, 500, 1372, 406,
 ];
+
+const POST_SPECS = {
+  3: {
+    slug: "welcome-to-ai-creative-writing",
+  },
+  37: {
+    slug: "obsidian-00-official-guide-notes",
+  },
+  212: {
+    slug: "obsidian-01-more-than-a-note-app",
+  },
+  213: {
+    slug: "obsidian-02-image-management-guide",
+  },
+  214: {
+    slug: "obsidian-03-web-viewer-guide",
+  },
+  405: {
+    slug: "why-most-ai-agents-are-workflows",
+  },
+  406: {
+    slug: "crawl-a-whole-site-with-claude-code",
+  },
+  476: {
+    slug: "automate-epub-to-markdown",
+  },
+  478: {
+    slug: "quit-short-video-addiction",
+  },
+  500: {
+    slug: "n8n-01-self-hosting-and-updates",
+  },
+  502: {
+    slug: "n8n-02-why-you-should-use-n8n",
+  },
+  1372: {
+    slug: "lovable-ai-programming-guide",
+  },
+};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, "..");
@@ -20,7 +59,9 @@ const postIds = process.argv
   .filter(Number.isInteger);
 
 const importIds = postIds.length > 0 ? postIds : DEFAULT_POST_IDS;
-const postPathMap = new Map(importIds.map(id => [id, `/posts/news-${id}`]));
+const postPathMap = new Map(
+  importIds.map(id => [id, `/posts/${POST_SPECS[id]?.slug ?? `news-${id}`}`])
+);
 
 const sql = `
 SELECT
@@ -216,6 +257,13 @@ function buildFrontmatter(post) {
     post.tags.length > 0
       ? ["tags:", ...post.tags.map(tag => `  - ${escapeYamlString(tag)}`)]
       : ["tags: []"];
+  const legacyPathLines =
+    post.legacyPaths.length > 0
+      ? [
+          "legacyPaths:",
+          ...post.legacyPaths.map(path => `  - ${escapeYamlString(path)}`),
+        ]
+      : [];
 
   return [
     "---",
@@ -224,6 +272,7 @@ function buildFrontmatter(post) {
     `title: ${escapeYamlString(post.title)}`,
     "draft: false",
     ...tagLines,
+    ...legacyPathLines,
     `description: ${escapeYamlString(post.description)}`,
     "---",
     "",
@@ -265,6 +314,7 @@ const rows = output
       title,
       tags,
       content,
+      legacyPaths: [`/posts/news-${gid}`],
       description: cleanDescription(excerpt, content),
     };
   });
@@ -273,8 +323,12 @@ ensureExpectedCount(rows);
 mkdirSync(blogDir, { recursive: true });
 
 for (const row of rows) {
-  const slug = `news-${row.gid}`;
+  const slug = POST_SPECS[row.gid]?.slug ?? `news-${row.gid}`;
   const filePath = join(blogDir, `${slug}.md`);
+  const legacyFilePath = join(blogDir, `news-${row.gid}.md`);
   writeFileSync(filePath, buildFileContent(row), "utf8");
+  if (legacyFilePath !== filePath && existsSync(legacyFilePath)) {
+    rmSync(legacyFilePath);
+  }
   process.stdout.write(`written ${filePath}\n`);
 }

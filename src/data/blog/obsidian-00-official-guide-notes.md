@@ -6,6 +6,8 @@ draft: false
 tags:
   - "笔记系统"
   - "obsidian"
+legacyPaths:
+  - "/posts/news-37"
 description: "There’s no silver bullet solution that works perfectly for everyone. 每个人都应该去寻找自己的解决方案 和市面上绝大多数笔记软件不一样的是，Obsidian并不将你的笔记上..."
 ---
 

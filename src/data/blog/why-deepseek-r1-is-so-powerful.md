@@ -3,7 +3,11 @@ author: "齐木"
 pubDatetime: 2025-02-01T19:48:00+08:00
 title: "大白话解释DeepSeekR1究竟厉害在什么地方"
 draft: false
-tags: []
+tags:
+  - "AI模型"
+  - "deepseek"
+  - "大模型"
+  - "科普"
 description: '前些天在咖啡馆听见两个程序员吵架，一个说："现在的AI就像我那个永远不带草稿纸的侄子！"另一个拍桌："所以要用CoT啊！"我差点把拿铁喷在MacBook上——这年头连AI都要带草稿纸了？ 后来才知道，他们说的"草稿纸"就是最近让DeepSe...'
 ---
 

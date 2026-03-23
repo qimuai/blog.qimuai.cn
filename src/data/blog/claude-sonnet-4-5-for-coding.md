@@ -3,7 +3,11 @@ author: "齐木"
 pubDatetime: 2025-09-30T01:29:00+08:00
 title: "深夜突发：Claude Sonnet 4.5 发布，编程的王又升级了"
 draft: false
-tags: []
+tags:
+  - "AI编程"
+  - "claude"
+  - "模型更新"
+  - "开发工具"
 description: "刚刚，AI圈又炸场了。 这次不是OpenAI，也不是谷歌，而是那个总被说“低调”的Anthropic。他们刚刚扔出了王炸——Claude Sonnet 4.5。 （图片：Claude Sonnet 4.5官方发布图） 如果你还在用ChatG..."
 ---
 

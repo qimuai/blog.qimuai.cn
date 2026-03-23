@@ -3,7 +3,11 @@ author: "齐木"
 pubDatetime: 2024-04-11T18:05:00+08:00
 title: "一站式解决 ComfyUI 安装、调试和界面操作，附安装包 C001"
 draft: false
-tags: []
+tags:
+  - "AI绘图"
+  - "comfyui"
+  - "教程"
+  - "本地部署"
 description: "本地安装 提醒！以下所有安装操作，都需要在全局科学上网的情况下操作。当然，如果你不能科学上网，也可以 在文章结尾找到我为你打包的安装包，直接在国内网盘里下载。 ComfyUI本体安装 下载页面 https://github.com/comf..."
 ---
 

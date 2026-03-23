@@ -3,7 +3,11 @@ author: "齐木"
 pubDatetime: 2024-11-11T23:39:00+08:00
 title: "颠覆传统搜索146k星标AI搜索引擎手把手教你部署"
 draft: false
-tags: []
+tags:
+  - "开源项目"
+  - "AI搜索"
+  - "perplexica"
+  - "部署"
 description: "注意！如果想要直接部署，可以拉到后面，有手把手部署教程！ 最近两年，AI搜索引擎成了科技圈的一个热门话题。不知道你有没有听说过Perplexity AI？它是一个备受关注的AI搜索引擎。但今天我要和大家聊的不是它，而是一个叫Perplexi..."
 ---
 

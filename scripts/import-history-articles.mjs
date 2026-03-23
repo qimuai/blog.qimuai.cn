@@ -12,40 +12,58 @@ const targetDir = path.join(projectRoot, "src", "data", "blog");
 const ARTICLE_SPECS = {
   "3分钟搞定微信客服DeepSeek满血版小白也能轻松上手": {
     slug: "deepseek-wechat-customer-service",
+    tags: ["AI应用", "deepseek", "微信", "腾讯云", "教程"],
   },
   AI编程新手如何选择六大平台对比CursorWindSurfv0Bolt通义灵码以及豆包MarsCo: {
     slug: "how-beginners-choose-ai-coding-platforms",
+    tags: ["AI编程", "工具对比", "cursor", "windsurf", "bolt"],
   },
   Cursor安装与基础配置手把手教你让AI自动写代码: {
     slug: "cursor-install-and-basic-setup",
+    tags: ["AI编程", "cursor", "教程", "开发环境"],
   },
   "一站式解决ComfyUI安装调试和界面操作附安装包C001 (1)": {
     slug: "comfyui-install-debug-and-ui-guide",
     title: "一站式解决 ComfyUI 安装、调试和界面操作，附安装包 C001",
+    tags: ["AI绘图", "comfyui", "教程", "本地部署"],
   },
   全流程公开没有写一行代码我开发了人生中第一个商用网页: {
     slug: "my-first-commercial-webpage-without-coding",
+    tags: ["建站", "零代码", "web", "实战"],
   },
   国内无痛调用GPT5Claude45的官方API绝对不会封号官方都拿你没办法: {
     slug: "use-gpt5-and-claude45-official-api-in-china",
+    tags: ["API", "gpt-5", "claude", "开发者"],
   },
   大白话解释DeepSeekR1究竟厉害在什么地方: {
     slug: "why-deepseek-r1-is-so-powerful",
+    tags: ["AI模型", "deepseek", "大模型", "科普"],
   },
   打开方式不对原来Kimi强大的总结能力是这么用的: {
     slug: "how-to-use-kimi-for-summaries",
+    tags: ["AI工具", "kimi", "效率", "总结"],
   },
   深夜突发ClaudeSonnet45发布编程的王又升级了: {
     slug: "claude-sonnet-4-5-for-coding",
     title: "深夜突发：Claude Sonnet 4.5 发布，编程的王又升级了",
+    tags: ["AI编程", "claude", "模型更新", "开发工具"],
   },
   颠覆传统搜索146k星标AI搜索引擎手把手教你部署: {
     slug: "deploy-a-146k-star-ai-search-engine",
+    tags: ["开源项目", "AI搜索", "perplexica", "部署"],
   },
 };
 
 function escapeYamlString(value) {
   return JSON.stringify(value);
+}
+
+function formatYamlStringArray(key, values) {
+  if (!values.length) {
+    return `${key}: []`;
+  }
+
+  return `${key}:\n${values.map(value => `  - ${escapeYamlString(value)}`).join("\n")}`;
 }
 
 function cleanDescription(content) {
@@ -198,6 +216,7 @@ function parseArticle(filePath) {
     title,
     author,
     pubDatetime,
+    tags: spec.tags ?? [],
     content,
     description: cleanDescription(content),
   };
@@ -209,7 +228,7 @@ author: ${escapeYamlString(article.author)}
 pubDatetime: ${article.pubDatetime}
 title: ${escapeYamlString(article.title)}
 draft: false
-tags: []
+${formatYamlStringArray("tags", article.tags)}
 description: ${escapeYamlString(article.description)}
 ---
 

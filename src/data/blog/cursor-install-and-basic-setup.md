@@ -3,7 +3,11 @@ author: "齐木"
 pubDatetime: 2024-11-28T20:56:00+08:00
 title: "Cursor安装与基础配置手把手教你让AI自动写代码"
 draft: false
-tags: []
+tags:
+  - "AI编程"
+  - "cursor"
+  - "教程"
+  - "开发环境"
 description: "你是否曾梦想过，只需轻轻一点，AI就能为你自动编写出高效、准确的代码？今天，我要带你走进 Cursor 的世界，感受这款编程神器的魅力！🎉 🎯 Cursor简介 Cursor，作为VS Code的一个分支，不仅继承了其强大的功能，还加入了A..."
 ---
 

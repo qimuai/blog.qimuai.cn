@@ -3,7 +3,12 @@ author: "齐木"
 pubDatetime: 2024-11-25T19:32:00+08:00
 title: "AI编程新手如何选择六大平台对比CursorWindSurfv0Bolt通义灵码以及豆包MarsCo"
 draft: false
-tags: []
+tags:
+  - "AI编程"
+  - "工具对比"
+  - "cursor"
+  - "windsurf"
+  - "bolt"
 description: "现在领先的编程平台有哪些？ 据我了解，有如下五大平台： Cursor、WindSurf、v0、Bolt.new、通义灵码以及豆包MarsCode Cursor https://www.cursor.com/ Cursor是基于Visual..."
 ---
 

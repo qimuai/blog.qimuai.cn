@@ -6,7 +6,11 @@ import { SITE } from "@/config";
 
 {
   SITE.showBackButton && (
-    <div class="app-layout flex items-center justify-start">
+    <div
+      id="back-button-wrap"
+      class="app-layout flex hidden items-center justify-start"
+      aria-hidden="true"
+    >
       <LinkButton
         id="back-button"
         href="/"
@@ -24,12 +28,26 @@ import { SITE } from "@/config";
   function updateGoBackUrl() {
     const backButton: HTMLAnchorElement | null =
       document.querySelector("#back-button");
+    const backButtonWrap: HTMLDivElement | null =
+      document.querySelector("#back-button-wrap");
 
     const backUrl = sessionStorage.getItem("backUrl");
 
-    if (backUrl && backButton) {
+    const shouldShowBackButton =
+      !!backUrl &&
+      backUrl !== "/" &&
+      backUrl !== window.location.pathname &&
+      backUrl !== window.location.pathname + window.location.search;
+
+    if (shouldShowBackButton && backUrl && backButton && backButtonWrap) {
       backButton.href = backUrl;
+      backButtonWrap.classList.remove("hidden");
+      backButtonWrap.setAttribute("aria-hidden", "false");
+      return;
     }
+
+    backButtonWrap?.classList.add("hidden");
+    backButtonWrap?.setAttribute("aria-hidden", "true");
   }
 
   document.addEventListener("astro:page-load", updateGoBackUrl);

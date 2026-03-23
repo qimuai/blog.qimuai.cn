@@ -24,50 +24,79 @@ const { groups, currentPage, lastPage } = Astro.props;
 
 {
   groups.length > 0 && (
-    <section class="mb-10 paper-panel p-5 sm:p-6" data-pagefind-ignore>
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p class="section-kicker">时间索引</p>
-          <p class="mt-3 max-w-2xl text-sm leading-6 text-foreground/66">
-            按年-月快速跳到对应月份的文章位置。
-          </p>
-        </div>
-        {lastPage > 1 && (
-          <p class="text-xs tracking-[0.22em] text-foreground/38 uppercase">
-            第 {currentPage} / {lastPage} 页
-          </p>
-        )}
-      </div>
+    <details
+      class="group mb-10 paper-panel p-5 sm:p-6"
+      data-pagefind-ignore
+      open
+    >
+      <summary class="list-none [&::-webkit-details-marker]:hidden">
+        <div class="flex cursor-pointer flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="section-kicker">时间索引</p>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-foreground/66">
+              按年-月快速跳到对应月份的文章位置。
+            </p>
+          </div>
 
-      <div class="mt-6 space-y-4">
-        {groups.map(group => (
-          <section class="grid gap-2 sm:grid-cols-[3.25rem_minmax(0,1fr)] sm:gap-4">
-            <div class="pt-1 font-display text-lg text-foreground/76 sm:text-xl">
-              {group.year}
-            </div>
-            <div class="flex flex-wrap gap-2">
-              {group.items.map(item => (
-                <a
-                  href={item.href}
-                  class:list={[
-                    "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
-                    "hover:border-accent/50 hover:text-accent",
-                    item.isCurrentPage
-                      ? "border-accent/26 bg-accent/6 text-foreground"
-                      : "border-border/80 text-foreground/60",
-                  ]}
-                  aria-label={`跳转到 ${item.label} 的文章`}
-                >
-                  <span>{item.label}</span>
-                  <span class="text-[0.72rem] text-foreground/36">
-                    {item.count}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))}
+          <div class="flex items-center gap-3 self-center">
+            {lastPage > 1 && (
+              <p class="text-xs tracking-[0.22em] text-foreground/38 uppercase">
+                第 {currentPage} / {lastPage} 页
+              </p>
+            )}
+
+            <span class="inline-flex items-center gap-2 rounded-full border border-border/80 px-3 py-1.5 text-xs tracking-[0.18em] text-foreground/58 uppercase transition-colors group-hover:border-accent/40 group-hover:text-accent">
+              <span>展开 / 收起</span>
+              <svg
+                class="size-3.5 transition-transform duration-200 group-open:rotate-180"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 6.5L8 10L12 6.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
+        </div>
+      </summary>
+
+      <div class="mt-6 border-t border-border/65 pt-6">
+        <div class="space-y-4">
+          {groups.map(group => (
+            <section class="grid gap-2 sm:grid-cols-[3.25rem_minmax(0,1fr)] sm:gap-4">
+              <div class="pt-1 font-display text-lg text-foreground/76 sm:text-xl">
+                {group.year}
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {group.items.map(item => (
+                  <a
+                    href={item.href}
+                    class:list={[
+                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                      "hover:border-accent/50 hover:text-accent",
+                      item.isCurrentPage
+                        ? "border-accent/26 bg-accent/6 text-foreground"
+                        : "border-border/80 text-foreground/60",
+                    ]}
+                    aria-label={`跳转到 ${item.label} 的文章`}
+                  >
+                    <span>{item.label}</span>
+                    <span class="text-[0.72rem] text-foreground/36">
+                      {item.count}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
-    </section>
+    </details>
   )
 }

@@ -65,6 +65,5 @@ jobs:
       - name: Verify deployed site
         shell: bash
         run: |
-          ssh -p "${{ secrets.BLOG_DEPLOY_PORT }}" \
-            "${{ secrets.BLOG_DEPLOY_USER }}@${{ secrets.BLOG_DEPLOY_HOST }}" \
-            'curl -k -I -H "Host: blog.qimuai.cn" https://127.0.0.1/ | sed -n "1,12p"'
+          curl -I --max-redirs 3 https://blog.qimuai.cn/ | sed -n "1,12p"
+          curl -I --max-redirs 3 https://blog.qimuai.cn/posts/news-214/ | sed -n "1,12p"

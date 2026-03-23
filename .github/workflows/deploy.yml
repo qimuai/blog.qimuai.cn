@@ -71,7 +71,13 @@ jobs:
             cd /opt/blog-admin/repo
             git pull --ff-only origin main
             sudo systemctl restart blog-admin.service
-            curl -fsS http://127.0.0.1:4321/health'
+            for attempt in $(seq 1 10); do
+              if curl -fsS http://127.0.0.1:4321/health; then
+                exit 0
+              fi
+              sleep 1
+            done
+            exit 1'
 
       - name: Verify deployed site
         shell: bash

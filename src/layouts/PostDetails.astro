@@ -4,18 +4,17 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Tag from "@/components/Tag.astro";
-import Datetime from "@/components/Datetime.astro";
 import EditPost from "@/components/EditPost.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
 import GiscusComments from "@/components/GiscusComments.astro";
+import LinkButton from "@/components/LinkButton.astro";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 import getReadingStats from "@/utils/getReadingStats";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
-import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
 import { SITE } from "@/config";
 
 type Props = {
@@ -40,8 +39,18 @@ const {
 
 const { Content, headings = [] } = await render(post);
 const readingStats = getReadingStats(post.body ?? "");
+const pagePath = getPath(post.id, post.filePath);
+const pageUrl = new URL(pagePath, Astro.site).href;
+const siteHost = new URL(SITE.website).hostname;
 const leadTag = tags.at(0) ?? "文章";
 const tocHeadings = headings.filter(({ depth }) => depth >= 2 && depth <= 3);
+
+const formattedMetaDate = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: timezone || SITE.timezone,
+}).format(new Date(pubDatetime));
 
 let ogImageUrl: string | undefined;
 
@@ -52,7 +61,7 @@ if (typeof initOgImage === "string") {
 }
 
 if (!ogImageUrl && SITE.dynamicOgImage) {
-  ogImageUrl = `${getPath(post.id, post.filePath)}/index.png`;
+  ogImageUrl = `${pagePath}/index.png`;
 }
 
 const ogImage = ogImageUrl
@@ -70,19 +79,40 @@ const layoutProps = {
   scrollSmooth: true,
 };
 
-const allPosts = posts.map(({ data: { title }, id, filePath }) => ({
-  id,
-  title,
-  filePath,
+const allPosts = posts.map(item => ({
+  ...item,
+  path: getPath(item.id, item.filePath),
 }));
 
-const currentPostIndex = allPosts.findIndex(a => a.id === post.id);
-
+const currentPostIndex = allPosts.findIndex(item => item.id === post.id);
 const prevPost = currentPostIndex > 0 ? allPosts[currentPostIndex - 1] : null;
 const nextPost =
   currentPostIndex >= 0 && currentPostIndex < allPosts.length - 1
     ? allPosts[currentPostIndex + 1]
     : null;
+
+const relatedPosts = allPosts
+  .filter(item => item.id !== post.id)
+  .map(item => {
+    const sharedTags = item.data.tags.filter(tag => tags.includes(tag));
+
+    return {
+      ...item,
+      sharedTags,
+      sharedScore: sharedTags.length,
+    };
+  })
+  .filter(item => item.sharedScore > 0)
+  .sort((a, b) => {
+    const tagDiff = b.sharedScore - a.sharedScore;
+    if (tagDiff !== 0) return tagDiff;
+
+    return (
+      new Date(b.data.pubDatetime).getTime() -
+      new Date(a.data.pubDatetime).getTime()
+    );
+  })
+  .slice(0, 5);
 ---
 
 <Layout {...layoutProps}>
@@ -91,148 +121,142 @@ const nextPost =
   <main
     id="main-content"
     class:list={[
-      "wide-layout pb-12",
-      { "mt-8": !SITE.showBackButton, "mt-6": SITE.showBackButton },
+      "wide-layout pb-16",
+      { "mt-10": !SITE.showBackButton, "mt-4": SITE.showBackButton },
     ]}
     data-pagefind-body
   >
-    <header class="border-b border-border/70 pb-10">
-      <div class="flex flex-wrap items-center gap-3 text-xs">
-        <span class="section-kicker">{leadTag}</span>
-        <span class="text-foreground/40">/</span>
-        <span class="text-foreground/56"
-          >{new Date(pubDatetime).getFullYear()}</span
-        >
-      </div>
-      <h1
-        transition:name={slugifyStr(title.replaceAll(".", "-"))}
-        class="mt-5 inline-block max-w-4xl font-display text-4xl leading-tight font-semibold text-foreground sm:text-5xl lg:text-6xl"
+    <div class="grid gap-10 xl:grid-cols-[220px_minmax(0,1fr)] xl:gap-16">
+      <aside
+        class="hidden xl:sticky xl:top-24 xl:block xl:self-start xl:pt-28"
+        data-pagefind-ignore
       >
-        {title}
-      </h1>
-      <p
-        class="mt-5 max-w-3xl text-base leading-8 text-foreground/78 sm:text-xl"
-      >
-        {description}
-      </p>
-      <div class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="paper-panel p-4">
-          <div class="section-kicker">发布日期</div>
-          <Datetime
-            pubDatetime={pubDatetime}
-            timezone={timezone}
-            class="mt-3"
-          />
-        </div>
-        <div class="paper-panel p-4">
-          <div class="section-kicker">阅读时长</div>
-          <div class="mt-3 text-sm text-foreground/78 sm:text-base">
-            约 {readingStats.readingMinutes} 分钟
+        <TableOfContents headings={tocHeadings} />
+      </aside>
+
+      <div class="min-w-0">
+        <header class="max-w-4xl border-b border-border/60 pb-8">
+          <div class="flex flex-wrap items-center gap-3 text-xs">
+            <span class="section-kicker">{leadTag}</span>
+            <span class="text-foreground/30">/</span>
+            <span class="text-foreground/48">{siteHost}</span>
           </div>
-        </div>
-        <div class="paper-panel p-4">
-          <div class="section-kicker">文本规模</div>
-          <div class="mt-3 text-sm text-foreground/78 sm:text-base">
-            约 {readingStats.wordCount} 字
+          <h1
+            transition:name={slugifyStr(title.replaceAll(".", "-"))}
+            class="mt-5 max-w-4xl font-display text-4xl leading-[1.12] font-semibold text-foreground sm:text-5xl"
+          >
+            {title}
+          </h1>
+          <div
+            class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-base text-foreground/62 sm:text-lg"
+          >
+            <span>{author}</span>
+            <span class="text-foreground/28">·</span>
+            <time datetime={new Date(pubDatetime).toISOString()}>
+              {formattedMetaDate}
+            </time>
+            <span class="text-foreground/28">·</span>
+            <span>{siteHost}</span>
           </div>
-        </div>
-        <div class="paper-panel p-4">
-          <div class="section-kicker">本文阅读</div>
-          <div class="mt-3 text-sm text-foreground/78 sm:text-base">
+          <div
+            class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-foreground/46"
+          >
+            <span>约 {readingStats.readingMinutes} 分钟</span>
+            <span class="text-foreground/24">·</span>
+            <span>{readingStats.wordCount} 字</span>
+            <span class="text-foreground/24">·</span>
             <span id="busuanzi_container_page_pv" style="display:none;">
-              <span id="busuanzi_value_page_pv"></span> 次
+              本文阅读 <span id="busuanzi_value_page_pv"></span> 次
             </span>
             <span id="page-pv-fallback">统计加载中</span>
           </div>
-        </div>
-      </div>
-    </header>
+        </header>
 
-    <div class="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_240px]">
-      <div class="min-w-0">
         <article
           id="article"
-          class="app-prose w-full max-w-3xl prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+          class="app-prose mt-12 w-full max-w-4xl prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
         >
           <Content />
         </article>
 
-        <hr class="my-8 border-dashed" />
-
-        <EditPost class="sm:hidden" {hideEditPost} {post} />
-
-        <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
-          {
-            tags.map(tag => (
-              <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />
-            ))
-          }
-        </ul>
-
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-3 text-sm">
-          <EditPost {hideEditPost} {post} class="hidden sm:inline-flex" />
-          <ShareLinks />
-        </div>
-
-        <GiscusComments
-          pagePath={getPath(post.id, post.filePath)}
-          pageTitle={title}
-          pageUrl={new URL(getPath(post.id, post.filePath), Astro.site).href}
-        />
-      </div>
-
-      <aside
-        class="space-y-6 xl:sticky xl:top-24 xl:self-start"
-        data-pagefind-ignore
-      >
-        <TableOfContents headings={tocHeadings} />
-        <div class="paper-panel p-5">
-          <p class="section-kicker">文中标签</p>
-          <div class="mt-4 flex flex-wrap gap-2">
+        <section class="mt-10 max-w-4xl border-t border-border/55 pt-6">
+          <ul class="flex flex-wrap gap-4">
             {
               tags.map(tag => (
                 <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />
               ))
             }
+          </ul>
+
+          <div
+            class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-foreground/56"
+          >
+            <EditPost {hideEditPost} {post} />
+            <ShareLinks />
           </div>
+        </section>
+
+        {
+          relatedPosts.length > 0 && (
+            <section
+              class="mt-10 max-w-4xl border-t border-border/45 pt-6"
+              data-pagefind-ignore
+            >
+              <p class="section-kicker">同标签继续读</p>
+              <ul class="mt-4 space-y-3">
+                {relatedPosts.map(item => (
+                  <li>
+                    <a
+                      href={item.path}
+                      class="group flex items-baseline justify-between gap-4 text-sm text-foreground/58 transition-colors hover:text-foreground"
+                    >
+                      <span class="truncate">{item.data.title}</span>
+                      <span class="hidden text-xs text-foreground/34 sm:inline">
+                        {item.sharedTags.slice(0, 2).join(" · ")}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+
+        <div
+          class="mt-8 flex max-w-4xl flex-wrap items-center gap-x-5 gap-y-3 text-sm text-foreground/56"
+          data-pagefind-ignore
+        >
+          <LinkButton href="/" class="hover:text-foreground">
+            <IconChevronLeft class="inline-block size-4 rtl:rotate-180" />
+            回到首页
+          </LinkButton>
+          {
+            prevPost && (
+              <a href={prevPost.path} class="hover:text-foreground">
+                上一篇：{prevPost.data.title}
+              </a>
+            )
+          }
+          {
+            nextPost && (
+              <a href={nextPost.path} class="hover:text-foreground">
+                下一篇：{nextPost.data.title}
+              </a>
+            )
+          }
         </div>
-      </aside>
+
+        <div class="max-w-4xl">
+          <GiscusComments
+            pagePath={pagePath}
+            pageTitle={title}
+            pageUrl={pageUrl}
+          />
+        </div>
+      </div>
     </div>
 
     <BackToTopButton />
-
-    <hr class="my-10 border-dashed" />
-
-    <div data-pagefind-ignore class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-      {
-        prevPost && (
-          <a
-            href={getPath(prevPost.id, prevPost.filePath)}
-            class="flex w-full gap-3 paper-panel p-4 hover:border-accent/50"
-          >
-            <IconChevronLeft class="inline-block flex-none rtl:rotate-180" />
-            <div>
-              <span class="section-kicker">上一篇</span>
-              <div class="text-sm text-accent/85">{prevPost.title}</div>
-            </div>
-          </a>
-        )
-      }
-      {
-        nextPost && (
-          <a
-            href={getPath(nextPost.id, nextPost.filePath)}
-            class="flex w-full justify-end gap-3 paper-panel p-4 text-end hover:border-accent/50 sm:col-start-2"
-          >
-            <div>
-              <span class="section-kicker">下一篇</span>
-              <div class="text-sm text-accent/85">{nextPost.title}</div>
-            </div>
-            <IconChevronRight class="inline-block flex-none rtl:rotate-180" />
-          </a>
-        )
-      }
-    </div>
   </main>
   <Footer />
 </Layout>
@@ -260,11 +284,10 @@ const nextPost =
         document.documentElement.scrollHeight -
         document.documentElement.clientHeight;
       const scrolled = (winScroll / height) * 100;
-      if (document) {
-        const myBar = document.getElementById("myBar");
-        if (myBar) {
-          myBar.style.width = scrolled + "%";
-        }
+      const myBar = document.getElementById("myBar");
+
+      if (myBar) {
+        myBar.style.width = scrolled + "%";
       }
     });
   }
@@ -274,6 +297,7 @@ const nextPost =
     const headings = Array.from(
       document.querySelectorAll("h2, h3, h4, h5, h6")
     );
+
     for (const heading of headings) {
       heading.classList.add("group");
       const link = document.createElement("a");
@@ -289,6 +313,53 @@ const nextPost =
     }
   }
   addHeadingLinks();
+
+  function syncActiveTocLink() {
+    const links = Array.from(document.querySelectorAll("[data-toc-link]"));
+    const headings = Array.from(
+      document.querySelectorAll("#article h2[id], #article h3[id]")
+    );
+
+    if (!links.length || !headings.length) return;
+
+    const setActive = id => {
+      for (const link of links) {
+        link.setAttribute(
+          "data-active",
+          link.getAttribute("data-toc-link") === id ? "true" : "false"
+        );
+      }
+    };
+
+    setActive(headings[0].id);
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const visibleHeadings = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visibleHeadings.length > 0) {
+          setActive(visibleHeadings[0].target.id);
+        }
+      },
+      {
+        rootMargin: "-18% 0px -65% 0px",
+        threshold: [0, 1],
+      }
+    );
+
+    for (const heading of headings) {
+      observer.observe(heading);
+    }
+
+    document.addEventListener(
+      "astro:before-swap",
+      () => observer.disconnect(),
+      { once: true }
+    );
+  }
+  syncActiveTocLink();
 
   function attachCopyButtons() {
     const copyButtonLabel = "复制";

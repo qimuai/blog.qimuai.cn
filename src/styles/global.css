@@ -131,6 +131,10 @@ html[data-theme="dark"] {
       animation-delay: 0.16s;
     }
   }
+
+  .reading-toc-link[data-active="true"] {
+    @apply bg-muted/42 text-foreground;
+  }
 }
 
 @utility max-w-app {

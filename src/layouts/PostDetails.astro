@@ -7,6 +7,7 @@ import Tag from "@/components/Tag.astro";
 import EditPost from "@/components/EditPost.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import BackButton from "@/components/BackButton.astro";
+import ShareArticleButton from "@/components/ShareArticleButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
 import TableOfContents from "@/components/TableOfContents.astro";
 import GiscusComments from "@/components/GiscusComments.astro";
@@ -290,6 +291,7 @@ const relatedPosts = allPosts
       </div>
     </div>
 
+    <ShareArticleButton pageTitle={title} pageUrl={pageUrl} />
     <BackToTopButton />
   </main>
   <Footer />

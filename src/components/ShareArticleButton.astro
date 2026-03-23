@@ -1,0 +1,137 @@
+---
+type Props = {
+  pageTitle: string;
+  pageUrl: string;
+};
+
+const { pageTitle, pageUrl } = Astro.props;
+---
+
+<div
+  class:list={[
+    "fixed end-4 bottom-24 z-50",
+    "md:sticky md:end-auto md:float-end md:clear-both md:me-1 md:mb-3",
+  ]}
+>
+  <button
+    type="button"
+    data-button="share-article"
+    data-page-title={pageTitle}
+    data-page-url={pageUrl}
+    aria-label="分享文章"
+    class:list={[
+      "group relative bg-background px-2 py-1",
+      "size-14 rounded-full shadow-xl",
+      "md:h-8 md:w-fit md:rounded-md md:shadow-none md:focus-visible:rounded-none",
+      "md:bg-background/35 md:bg-clip-padding md:backdrop-blur-lg",
+    ]}
+  >
+    <span class="flex items-center justify-center md:hidden" aria-hidden="true">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="size-5"
+      >
+        <path d="M8 7h8"></path>
+        <path d="M8 12h8"></path>
+        <path d="M8 17h5"></path>
+        <path
+          d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2H8a2 2 0 0 1 -2 -2V5a2 2 0 0 1 2 -2z"
+        ></path>
+      </svg>
+    </span>
+    <span
+      class="sr-only text-sm group-hover:text-accent md:not-sr-only"
+      aria-live="polite"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="me-1 inline-block size-4"
+        aria-hidden="true"
+      >
+        <path d="M8 7h8"></path>
+        <path d="M8 12h8"></path>
+        <path d="M8 17h5"></path>
+        <path
+          d="M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2H8a2 2 0 0 1 -2 -2V5a2 2 0 0 1 2 -2z"
+        ></path>
+      </svg>
+      <span data-share-label>分享文章</span>
+    </span>
+  </button>
+</div>
+
+<script is:inline data-astro-rerun>
+  function initShareArticleButton() {
+    const shareButton = document.querySelector("[data-button='share-article']");
+    const label = shareButton?.querySelector("[data-share-label]");
+
+    if (!(shareButton instanceof HTMLButtonElement) || !label) return;
+
+    let resetTimer;
+
+    const fallbackCopy = text => {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    };
+
+    const setLabel = text => {
+      label.textContent = text;
+      shareButton.setAttribute("aria-label", text);
+    };
+
+    const copyArticle = async () => {
+      const articleTitle =
+        shareButton.getAttribute("data-page-title") ||
+        document.title.replace(/\s*\|.*$/, "").trim();
+      const articleUrl =
+        shareButton.getAttribute("data-page-url") || window.location.href;
+      const payload = `${articleTitle}\n${articleUrl}`;
+
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(payload);
+        } else {
+          fallbackCopy(payload);
+        }
+
+        setLabel("已复制");
+      } catch {
+        setLabel("复制失败");
+      }
+
+      window.clearTimeout(resetTimer);
+      resetTimer = window.setTimeout(() => {
+        setLabel("分享文章");
+      }, 1200);
+    };
+
+    shareButton.addEventListener("click", copyArticle);
+
+    document.addEventListener(
+      "astro:before-swap",
+      () => window.clearTimeout(resetTimer),
+      { once: true }
+    );
+  }
+
+  initShareArticleButton();
+</script>

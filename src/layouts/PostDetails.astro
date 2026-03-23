@@ -237,7 +237,9 @@ const relatedPosts = allPosts
                       href={item.path}
                       class="group flex items-baseline justify-between gap-4 text-sm text-foreground/48 transition-colors hover:text-foreground"
                     >
-                      <span class="truncate">{item.data.title}</span>
+                      <span class="truncate text-accent underline decoration-transparent underline-offset-4 transition-[color,text-decoration-color] group-hover:decoration-accent/35">
+                        {item.data.title}
+                      </span>
                       <span class="hidden text-xs text-foreground/28 sm:inline">
                         {item.sharedTags.slice(0, 2).join(" · ")}
                       </span>
@@ -259,14 +261,20 @@ const relatedPosts = allPosts
           {
             prevPost && (
               <a href={prevPost.path} class="hover:text-foreground">
-                上一篇：{prevPost.data.title}
+                <span class="text-foreground/42">上一篇：</span>
+                <span class="text-accent underline decoration-transparent underline-offset-4 transition-[color,text-decoration-color] hover:decoration-accent/35">
+                  {prevPost.data.title}
+                </span>
               </a>
             )
           }
           {
             nextPost && (
               <a href={nextPost.path} class="hover:text-foreground">
-                下一篇：{nextPost.data.title}
+                <span class="text-foreground/42">下一篇：</span>
+                <span class="text-accent underline decoration-transparent underline-offset-4 transition-[color,text-decoration-color] hover:decoration-accent/35">
+                  {nextPost.data.title}
+                </span>
               </a>
             )
           }

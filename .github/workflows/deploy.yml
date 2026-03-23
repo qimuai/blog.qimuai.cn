@@ -1,0 +1,64 @@
+name: Deploy
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: blog-qimuai-cn-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy blog.qimuai.cn
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        run: pnpm run build
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.BLOG_DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.BLOG_DEPLOY_PORT }}" -H "${{ secrets.BLOG_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync dist to server
+        shell: bash
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.BLOG_DEPLOY_PORT }}" \
+            dist/ \
+            "${{ secrets.BLOG_DEPLOY_USER }}@${{ secrets.BLOG_DEPLOY_HOST }}:${{ secrets.BLOG_DEPLOY_PATH }}"
+
+      - name: Verify deployed site
+        shell: bash
+        run: |
+          ssh -p "${{ secrets.BLOG_DEPLOY_PORT }}" \
+            "${{ secrets.BLOG_DEPLOY_USER }}@${{ secrets.BLOG_DEPLOY_HOST }}" \
+            'curl -k -I -H "Host: blog.qimuai.cn" https://127.0.0.1/ | sed -n "1,12p"'

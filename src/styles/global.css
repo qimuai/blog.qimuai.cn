@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@import "./typography.css";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+:root,
+html[data-theme="light"] {
+  --background: #f7f3ea;
+  --foreground: #1b1f24;
+  --accent: #145d66;
+  --muted: #ebe4d6;
+  --border: #d8cfbf;
+  --spotlight: rgba(20, 93, 102, 0.1);
+}
+
+html[data-theme="dark"] {
+  --background: #161b20;
+  --foreground: #edf0f2;
+  --accent: #d6a34a;
+  --muted: #26313d;
+  --border: #43515f;
+  --spotlight: rgba(214, 163, 74, 0.1);
+}
+
+@theme inline {
+  --font-app: var(--font-body);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+}
+
+:root {
+  --font-body:
+    "Iowan Old Style", "Palatino Linotype", "Noto Serif SC",
+    "Source Han Serif SC", serif;
+  --font-code: var(--font-google-sans-code);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-accent/75;
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-muted) transparent;
+  }
+  html {
+    @apply overflow-y-scroll scroll-smooth;
+  }
+  body {
+    @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/75 selection:text-background;
+    background-image: radial-gradient(
+      circle at top right,
+      var(--spotlight),
+      transparent 32rem
+    );
+    background-attachment: fixed;
+  }
+  a,
+  button {
+    @apply outline-offset-1 outline-accent focus-visible:no-underline focus-visible:outline-2 focus-visible:outline-dashed;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-code);
+  }
+}
+
+@utility max-w-app {
+  @apply max-w-3xl;
+}
+
+@utility app-layout {
+  @apply mx-auto w-full max-w-app px-4;
+}
+
+.active-nav {
+  @apply underline decoration-dashed decoration-2 underline-offset-8;
+}
+
+/* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */
+/* Anything that has been anchored to should have extra scroll margin */
+:target {
+  scroll-margin-block: 1rem;
+}

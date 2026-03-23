@@ -20,12 +20,14 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
-.vercel
+# jetbrains setting folder
+.idea/
 
+# local app/workspace artifacts
+.obsidian/
+Clippings/
 package-lock.json
-bun.lockb
-yarn.lock
 
-# ide
-.idea
-*.iml
+# pagefind
+
+public/pagefind

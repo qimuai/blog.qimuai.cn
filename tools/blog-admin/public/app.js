@@ -1,7 +1,9 @@
+const shellElement = document.getElementById("shell");
 const postListElement = document.getElementById("post-list");
 const listMetaElement = document.getElementById("list-meta");
 const editorTitleElement = document.getElementById("editor-title");
 const editorMetaElement = document.getElementById("editor-meta");
+const draftSyncIndicatorElement = document.getElementById("draft-sync-indicator");
 const statusBannerElement = document.getElementById("status-banner");
 const searchInputElement = document.getElementById("search-input");
 const refreshButtonElement = document.getElementById("refresh-button");
@@ -9,6 +11,8 @@ const createButtonElement = document.getElementById("create-button");
 const saveButtonElement = document.getElementById("save-button");
 const previewButtonElement = document.getElementById("preview-button");
 const previewWindowButtonElement = document.getElementById("preview-window-button");
+const sidebarToggleButtonElement = document.getElementById("sidebar-toggle-button");
+const focusModeButtonElement = document.getElementById("focus-mode-button");
 const editorTextareaElement = document.getElementById("editor-textarea");
 const openPostLinkElement = document.getElementById("open-post-link");
 const metaTitleElement = document.getElementById("meta-title");
@@ -18,6 +22,7 @@ const metaTagsElement = document.getElementById("meta-tags");
 const metaDescriptionElement = document.getElementById("meta-description");
 const metaDraftElement = document.getElementById("meta-draft");
 const metaSlugElement = document.getElementById("meta-slug");
+const bodyPanelElement = document.getElementById("body-panel");
 const previewPanelElement = document.getElementById("preview-panel");
 const previewCloseButtonElement = document.getElementById("preview-close-button");
 const previewTitleElement = document.getElementById("preview-title");
@@ -31,9 +36,13 @@ const draftSlugInputElement = document.getElementById("draft-slug-input");
 const draftStatusElement = document.getElementById("draft-modal-status");
 const draftCancelButtonElement = document.getElementById("draft-cancel-button");
 const draftConfirmButtonElement = document.getElementById("draft-confirm-button");
+const toolbarButtonElements = Array.from(document.querySelectorAll("[data-md-action]"));
 
 const apiBasePath = "/admin/api/posts";
 const previewStoragePrefix = "blog-admin:preview:";
+const localDraftPrefix = "blog-admin:draft:";
+const lastSelectedPostKey = "blog-admin:last-selected-post";
+const uiPreferencesKey = "blog-admin:ui";
 const managedFrontmatterFields = ["title", "author", "pubDatetime", "description", "draft"];
 const formElements = [
   metaTitleElement,
@@ -52,6 +61,10 @@ let lastSerializedContent = "";
 let preservedFrontmatter = "";
 let previewOpen = false;
 let slugTouched = false;
+let sidebarCollapsed = false;
+let focusMode = false;
+let sidebarBeforeFocusMode = false;
+let draftSaveTimer = null;
 
 function yamlString(value) {
   return JSON.stringify(String(value ?? ""));
@@ -170,6 +183,235 @@ function getPublicPostUrl(slug) {
   return `https://blog.qimuai.cn/posts/${encodeURIComponent(slug)}/`;
 }
 
+function getUiPreferences() {
+  try {
+    return JSON.parse(localStorage.getItem(uiPreferencesKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveUiPreferences() {
+  localStorage.setItem(
+    uiPreferencesKey,
+    JSON.stringify({
+      sidebarCollapsed,
+    })
+  );
+}
+
+function applyShellState() {
+  shellElement.classList.toggle("sidebar-collapsed", sidebarCollapsed);
+  shellElement.classList.toggle("focus-mode", focusMode);
+  sidebarToggleButtonElement.textContent = sidebarCollapsed ? "显示文章列表" : "隐藏文章列表";
+  focusModeButtonElement.textContent = focusMode ? "退出全屏" : "全屏编辑";
+  focusModeButtonElement.classList.toggle("is-active", focusMode);
+  sidebarToggleButtonElement.disabled = focusMode;
+  sidebarToggleButtonElement.setAttribute("aria-pressed", sidebarCollapsed ? "true" : "false");
+  focusModeButtonElement.setAttribute("aria-pressed", focusMode ? "true" : "false");
+}
+
+function setSidebarCollapsed(nextValue, { persist = true } = {}) {
+  sidebarCollapsed = Boolean(nextValue);
+  applyShellState();
+
+  if (persist) {
+    saveUiPreferences();
+  }
+}
+
+async function setFocusMode(nextValue) {
+  const targetValue = Boolean(nextValue);
+  if (focusMode === targetValue) return;
+
+  focusMode = targetValue;
+
+  if (focusMode) {
+    sidebarBeforeFocusMode = sidebarCollapsed;
+    setSidebarCollapsed(true, { persist: false });
+    applyShellState();
+
+    if (bodyPanelElement.requestFullscreen && !document.fullscreenElement) {
+      try {
+        await bodyPanelElement.requestFullscreen();
+      } catch {
+        /* 浏览器不支持或拒绝时，仍然保留页面内的专注模式 */
+      }
+    }
+
+    editorTextareaElement.focus();
+    return;
+  }
+
+  if (document.fullscreenElement) {
+    try {
+      await document.exitFullscreen();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  setSidebarCollapsed(sidebarBeforeFocusMode, { persist: false });
+  sidebarBeforeFocusMode = sidebarCollapsed;
+  applyShellState();
+}
+
+function updateDraftSyncIndicator(message = "本地草稿会自动保存在浏览器。", tone = "") {
+  draftSyncIndicatorElement.textContent = message;
+  draftSyncIndicatorElement.className = `draft-sync-indicator${tone ? ` ${tone}` : ""}`;
+}
+
+function formatAutosaveTime(timestamp) {
+  try {
+    return new Date(timestamp).toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  } catch {
+    return "";
+  }
+}
+
+function getCurrentEditorSnapshot() {
+  if (!selectedPost) return null;
+
+  return {
+    sourceSlug: selectedPost.slug,
+    title: metaTitleElement.value.trim(),
+    author: metaAuthorElement.value.trim(),
+    pubDatetime: getCurrentPubDatetime(),
+    tags: metaTagsElement.value.trim(),
+    description: metaDescriptionElement.value.trim(),
+    draft: metaDraftElement.checked,
+    slug: getCurrentSlug(),
+    body: editorTextareaElement.value,
+  };
+}
+
+function getPostSnapshot(post) {
+  const { body } = splitRawContent(post.rawContent);
+
+  return {
+    sourceSlug: post.slug,
+    title: post.title || "",
+    author: post.author || "",
+    pubDatetime: post.pubDatetime || "",
+    tags: Array.isArray(post.tags) ? post.tags.join(", ") : "",
+    description: post.description || "",
+    draft: Boolean(post.draft),
+    slug: post.slug,
+    body,
+  };
+}
+
+function normalizeSnapshot(snapshot) {
+  return JSON.stringify({
+    title: snapshot?.title || "",
+    author: snapshot?.author || "",
+    pubDatetime: snapshot?.pubDatetime || "",
+    tags: snapshot?.tags || "",
+    description: snapshot?.description || "",
+    draft: Boolean(snapshot?.draft),
+    slug: snapshot?.slug || "",
+    body: snapshot?.body || "",
+  });
+}
+
+function getLocalDraftKey(sourceSlug) {
+  return `${localDraftPrefix}${sourceSlug}`;
+}
+
+function readLocalDraft(sourceSlug) {
+  if (!sourceSlug) return null;
+
+  try {
+    return JSON.parse(localStorage.getItem(getLocalDraftKey(sourceSlug)) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function clearLocalDraft(...sourceSlugs) {
+  sourceSlugs.filter(Boolean).forEach(sourceSlug => {
+    localStorage.removeItem(getLocalDraftKey(sourceSlug));
+  });
+}
+
+function persistLocalDraft() {
+  if (!selectedPost) return;
+
+  const currentSnapshot = getCurrentEditorSnapshot();
+  const serverSnapshot = getPostSnapshot(selectedPost);
+
+  if (normalizeSnapshot(currentSnapshot) === normalizeSnapshot(serverSnapshot)) {
+    clearLocalDraft(selectedPost.slug);
+    updateDraftSyncIndicator();
+    return;
+  }
+
+  const payload = {
+    ...currentSnapshot,
+    savedAt: new Date().toISOString(),
+  };
+
+  localStorage.setItem(getLocalDraftKey(selectedPost.slug), JSON.stringify(payload));
+  localStorage.setItem(lastSelectedPostKey, selectedPost.slug);
+  updateDraftSyncIndicator(`本地草稿已自动保存 ${formatAutosaveTime(payload.savedAt)}`, "saved");
+}
+
+function scheduleLocalDraftSave() {
+  if (!selectedPost) return;
+
+  window.clearTimeout(draftSaveTimer);
+  draftSaveTimer = window.setTimeout(() => {
+    persistLocalDraft();
+  }, 450);
+}
+
+function restoreLocalDraftIfNeeded(post) {
+  const savedDraft = readLocalDraft(post.slug);
+  if (!savedDraft) {
+    updateDraftSyncIndicator();
+    return false;
+  }
+
+  if (normalizeSnapshot(savedDraft) === normalizeSnapshot(getPostSnapshot(post))) {
+    clearLocalDraft(post.slug);
+    updateDraftSyncIndicator();
+    return false;
+  }
+
+  metaTitleElement.value = savedDraft.title || "";
+  metaAuthorElement.value = savedDraft.author || "";
+  metaPubDatetimeElement.value = savedDraft.pubDatetime || "";
+  metaTagsElement.value = savedDraft.tags || "";
+  metaDescriptionElement.value = savedDraft.description || "";
+  metaDraftElement.checked = Boolean(savedDraft.draft);
+  metaSlugElement.value = savedDraft.slug || post.slug;
+  editorTextareaElement.value = savedDraft.body || "";
+  updateDraftSyncIndicator(
+    `已恢复浏览器里的本地草稿 ${formatAutosaveTime(savedDraft.savedAt)}`,
+    "restored"
+  );
+  setStatus("已恢复浏览器里的本地草稿，你可以继续编辑。", "info");
+  return true;
+}
+
+function updateEditorMetaLine() {
+  if (!selectedPost) {
+    editorMetaElement.textContent = "支持快捷键 Ctrl/Cmd + S 保存。";
+    return;
+  }
+
+  editorMetaElement.textContent = [
+    getCurrentSlug() || selectedPost.slug,
+    metaPubDatetimeElement.value.trim() || "未填写发布时间",
+    metaDraftElement.checked ? "当前是草稿" : "已发布文章",
+  ].join(" | ");
+}
+
 function serializeCurrentPost({ validate = false } = {}) {
   const title = metaTitleElement.value.trim() || selectedPost?.title || "";
   const author = metaAuthorElement.value.trim() || selectedPost?.author || "Aaron";
@@ -215,6 +457,10 @@ function setEditorEnabled(enabled) {
   saveButtonElement.disabled = !enabled;
   previewButtonElement.disabled = !enabled;
   previewWindowButtonElement.disabled = !enabled;
+  focusModeButtonElement.disabled = !enabled;
+  toolbarButtonElements.forEach(button => {
+    button.disabled = !enabled;
+  });
 }
 
 function updateOpenPostLinkState() {
@@ -295,8 +541,9 @@ function resetEditor() {
   selectedPost = null;
   preservedFrontmatter = "";
   lastSerializedContent = "";
+  window.clearTimeout(draftSaveTimer);
   editorTitleElement.textContent = "选择左侧文章开始编辑";
-  editorMetaElement.textContent = "支持快捷键 Ctrl/Cmd + S 保存。";
+  updateEditorMetaLine();
   openPostLinkElement.href = "https://blog.qimuai.cn";
   metaTitleElement.value = "";
   metaAuthorElement.value = "";
@@ -307,6 +554,7 @@ function resetEditor() {
   metaSlugElement.value = "";
   editorTextareaElement.value = "";
   setEditorEnabled(false);
+  updateDraftSyncIndicator();
   updateOpenPostLinkState();
   closePreview();
   updateDirtyState();
@@ -339,6 +587,8 @@ function updateDirtyState() {
   saveButtonElement.disabled = !selectedPost || !dirty;
   previewButtonElement.disabled = !selectedPost;
   previewWindowButtonElement.disabled = !selectedPost;
+  focusModeButtonElement.disabled = !selectedPost;
+  updateEditorMetaLine();
   updateOpenPostLinkState();
 
   if (previewOpen) {
@@ -537,6 +787,101 @@ function renderMarkdownToHtml(markdown) {
   return blocks.join("\n");
 }
 
+function updateTextareaSelection(nextValue, selectionStart, selectionEnd = selectionStart) {
+  editorTextareaElement.value = nextValue;
+  editorTextareaElement.focus();
+  editorTextareaElement.setSelectionRange(selectionStart, selectionEnd);
+  editorTextareaElement.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function wrapSelection(prefix, suffix = "", placeholder = "内容") {
+  const value = editorTextareaElement.value;
+  const selectionStart = editorTextareaElement.selectionStart;
+  const selectionEnd = editorTextareaElement.selectionEnd;
+  const selectedText = value.slice(selectionStart, selectionEnd) || placeholder;
+  const nextValue = `${value.slice(0, selectionStart)}${prefix}${selectedText}${suffix}${value.slice(selectionEnd)}`;
+  const cursorStart = selectionStart + prefix.length;
+  const cursorEnd = cursorStart + selectedText.length;
+
+  updateTextareaSelection(nextValue, cursorStart, cursorEnd);
+}
+
+function prefixSelectedLines(prefix) {
+  const value = editorTextareaElement.value;
+  const selectionStart = editorTextareaElement.selectionStart;
+  const selectionEnd = editorTextareaElement.selectionEnd;
+  const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+  const lineEndIndex = value.indexOf("\n", selectionEnd);
+  const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+  const selectedBlock = value.slice(lineStart, lineEnd) || "内容";
+  const nextBlock = selectedBlock
+    .split("\n")
+    .map(line => `${prefix}${line.replace(new RegExp(`^${prefix}`), "")}`)
+    .join("\n");
+  const nextValue = `${value.slice(0, lineStart)}${nextBlock}${value.slice(lineEnd)}`;
+
+  updateTextareaSelection(nextValue, lineStart, lineStart + nextBlock.length);
+}
+
+function insertBlock(block, placeholder = "") {
+  const value = editorTextareaElement.value;
+  const selectionStart = editorTextareaElement.selectionStart;
+  const selectionEnd = editorTextareaElement.selectionEnd;
+  const selectedText = value.slice(selectionStart, selectionEnd).trim() || placeholder;
+  const prefix = selectionStart > 0 && value[selectionStart - 1] !== "\n" ? "\n" : "";
+  const suffix = selectionEnd < value.length && value[selectionEnd] !== "\n" ? "\n" : "";
+  const renderedBlock = block.replace("__CONTENT__", selectedText);
+  const nextValue = `${value.slice(0, selectionStart)}${prefix}${renderedBlock}${suffix}${value.slice(selectionEnd)}`;
+  const cursorPosition = selectionStart + prefix.length + renderedBlock.length;
+
+  updateTextareaSelection(nextValue, cursorPosition, cursorPosition);
+}
+
+function handleMarkdownAction(action) {
+  if (editorTextareaElement.disabled) return;
+
+  switch (action) {
+    case "bold":
+      wrapSelection("**", "**", "加粗内容");
+      break;
+    case "italic":
+      wrapSelection("*", "*", "斜体内容");
+      break;
+    case "code":
+      wrapSelection("`", "`", "代码");
+      break;
+    case "link":
+      wrapSelection("[", "](https://)", "链接文字");
+      break;
+    case "image":
+      wrapSelection("![", "](https://)", "图片说明");
+      break;
+    case "h2":
+      prefixSelectedLines("## ");
+      break;
+    case "h3":
+      prefixSelectedLines("### ");
+      break;
+    case "quote":
+      prefixSelectedLines("> ");
+      break;
+    case "ul":
+      prefixSelectedLines("- ");
+      break;
+    case "ol":
+      prefixSelectedLines("1. ");
+      break;
+    case "codeblock":
+      insertBlock("```text\n__CONTENT__\n```", "把代码放在这里");
+      break;
+    case "divider":
+      insertBlock("---", "---");
+      break;
+    default:
+      break;
+  }
+}
+
 function renderPreview() {
   const payload = buildPreviewPayload();
   if (!payload) return;
@@ -602,16 +947,14 @@ function populateEditor(post) {
   metaSlugElement.value = post.slug;
   editorTextareaElement.value = body;
   editorTitleElement.textContent = post.title;
-  editorMetaElement.textContent = [
-    post.slug,
-    post.pubDatetime || "未填写发布时间",
-    post.draft ? "当前是草稿" : "已发布文章",
-  ].join(" | ");
   setEditorEnabled(true);
-  updateOpenPostLinkState();
+  localStorage.setItem(lastSelectedPostKey, post.slug);
   lastSerializedContent = serializeCurrentPost();
+  const restoredDraft = restoreLocalDraftIfNeeded(post);
+  updateEditorMetaLine();
   updateDirtyState();
   renderPostList();
+  return restoredDraft;
 }
 
 async function loadPosts(selectSlug) {
@@ -619,9 +962,15 @@ async function loadPosts(selectSlug) {
   const data = await apiFetch(apiBasePath);
   posts = data.posts || [];
   renderPostList();
+  const rememberedSlug =
+    !selectSlug && !selectedPost ? localStorage.getItem(lastSelectedPostKey) : "";
+  const nextSlug = selectSlug || rememberedSlug;
 
-  if (selectSlug) {
-    await loadPost(selectSlug);
+  if (nextSlug) {
+    const rememberedPost = posts.find(post => post.slug === nextSlug);
+    if (rememberedPost) {
+      await loadPost(rememberedPost.slug);
+    }
   } else if (selectedPost) {
     const stillExists = posts.find(post => post.slug === selectedPost.slug);
     if (stillExists) {
@@ -633,15 +982,25 @@ async function loadPosts(selectSlug) {
 }
 
 async function loadPost(slug) {
+  if (selectedPost) {
+    persistLocalDraft();
+  }
+
   setStatus("正在载入文章内容…", "info");
   const data = await apiFetch(`${apiBasePath}/${encodeURIComponent(slug)}`);
-  populateEditor(data.post);
-  setStatus(`已载入《${data.post.title}》。`, "success");
+  const restoredDraft = populateEditor(data.post);
+  setStatus(
+    restoredDraft
+      ? `已载入《${data.post.title}》，并恢复了浏览器里的本地草稿。`
+      : `已载入《${data.post.title}》。`,
+    "success"
+  );
 }
 
 async function saveCurrentPost() {
   if (!selectedPost) return;
 
+  const previousSourceSlug = selectedPost.slug;
   saveButtonElement.disabled = true;
   setStatus("正在保存并推送到 GitHub…", "info");
 
@@ -653,6 +1012,8 @@ async function saveCurrentPost() {
       body: JSON.stringify({ rawContent, nextSlug }),
     });
 
+    clearLocalDraft(previousSourceSlug, data.post.slug);
+    updateDraftSyncIndicator();
     populateEditor(data.post);
     await loadPosts(data.post.slug);
     setStatus(
@@ -728,6 +1089,12 @@ createButtonElement.addEventListener("click", openDraftModal);
 saveButtonElement.addEventListener("click", saveCurrentPost);
 previewButtonElement.addEventListener("click", openPreview);
 previewWindowButtonElement.addEventListener("click", openPreviewWindow);
+sidebarToggleButtonElement.addEventListener("click", () => {
+  setSidebarCollapsed(!sidebarCollapsed);
+});
+focusModeButtonElement.addEventListener("click", () => {
+  setFocusMode(!focusMode);
+});
 previewCloseButtonElement.addEventListener("click", closePreview);
 draftCancelButtonElement.addEventListener("click", closeDraftModal);
 draftConfirmButtonElement.addEventListener("click", createDraftPost);
@@ -754,9 +1121,18 @@ metaSlugElement.addEventListener("input", () => {
   }
 });
 
+toolbarButtonElements.forEach(button => {
+  button.addEventListener("click", () => {
+    handleMarkdownAction(button.dataset.mdAction);
+  });
+});
+
 formElements.forEach(element => {
   const eventName = element.type === "checkbox" ? "change" : "input";
-  element.addEventListener(eventName, updateDirtyState);
+  element.addEventListener(eventName, () => {
+    updateDirtyState();
+    scheduleLocalDraftSave();
+  });
 });
 
 document.addEventListener("keydown", event => {
@@ -768,6 +1144,22 @@ document.addEventListener("keydown", event => {
   }
 });
 
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && focusMode) {
+    focusMode = false;
+    setSidebarCollapsed(sidebarBeforeFocusMode, { persist: false });
+    sidebarBeforeFocusMode = sidebarCollapsed;
+    applyShellState();
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  persistLocalDraft();
+});
+
+const uiPreferences = getUiPreferences();
+sidebarCollapsed = Boolean(uiPreferences.sidebarCollapsed);
+applyShellState();
 resetEditor();
 loadPosts().catch(error => {
   resetEditor();

@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Qimuai Blog 后台</title>
-    <link rel="stylesheet" href="/admin/styles.css?v=20260324c" />
+    <link rel="stylesheet" href="/admin/styles.css?v=20260324d" />
   </head>
   <body>
-    <div class="shell">
-      <aside class="sidebar">
+    <div id="shell" class="shell">
+      <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
           <p class="eyebrow">Qimuai Blog</p>
           <h1>文章后台</h1>
@@ -29,15 +29,24 @@
         <div id="post-list" class="post-list" aria-live="polite"></div>
       </aside>
 
-      <main class="editor-panel">
+      <main id="editor-panel" class="editor-panel">
         <header class="editor-header">
-          <div>
+          <div class="editor-heading">
             <p class="eyebrow">在线编辑</p>
             <h2 id="editor-title">选择左侧文章开始编辑</h2>
             <p id="editor-meta" class="editor-meta">支持快捷键 Ctrl/Cmd + S 保存。</p>
+            <p id="draft-sync-indicator" class="draft-sync-indicator">
+              本地草稿会自动保存在浏览器。
+            </p>
           </div>
 
           <div class="editor-actions">
+            <button id="sidebar-toggle-button" type="button" class="ghost-button">
+              隐藏文章列表
+            </button>
+            <button id="focus-mode-button" type="button" class="ghost-button" disabled>
+              全屏编辑
+            </button>
             <a
               id="open-post-link"
               class="ghost-link"
@@ -62,7 +71,7 @@
         <div id="status-banner" class="status-banner" hidden></div>
 
         <section class="editor-layout">
-          <section class="meta-panel">
+          <section id="meta-panel" class="meta-panel">
             <article class="meta-card">
               <div class="meta-card-header">
                 <div>
@@ -135,9 +144,52 @@
             </article>
           </section>
 
-          <section class="body-panel">
-            <label class="editor-field">
-              <span>正文 Markdown</span>
+          <section id="body-panel" class="body-panel">
+            <div class="body-panel-header">
+              <div>
+                <p class="body-panel-title">正文 Markdown</p>
+                <p class="body-panel-note">支持常用格式按钮，也会自动保存在当前浏览器。</p>
+              </div>
+              <div class="markdown-toolbar" role="toolbar" aria-label="Markdown 工具栏">
+                <button type="button" class="toolbar-button" data-md-action="bold" disabled>
+                  加粗
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="italic" disabled>
+                  斜体
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="h2" disabled>
+                  H2
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="h3" disabled>
+                  H3
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="link" disabled>
+                  链接
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="quote" disabled>
+                  引用
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="ul" disabled>
+                  列表
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="ol" disabled>
+                  编号
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="code" disabled>
+                  行内代码
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="codeblock" disabled>
+                  代码块
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="image" disabled>
+                  图片
+                </button>
+                <button type="button" class="toolbar-button" data-md-action="divider" disabled>
+                  分隔线
+                </button>
+              </div>
+            </div>
+            <label class="editor-field editor-field-body">
               <textarea
                 id="editor-textarea"
                 spellcheck="false"
@@ -210,6 +262,6 @@
       </section>
     </div>
 
-    <script type="module" src="/admin/app.js?v=20260324c"></script>
+    <script type="module" src="/admin/app.js?v=20260324d"></script>
   </body>
 </html>

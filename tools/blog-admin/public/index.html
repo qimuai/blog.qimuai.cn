@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Qimuai Blog 后台</title>
-    <link rel="stylesheet" href="/admin/styles.css?v=20260324b" />
+    <link rel="stylesheet" href="/admin/styles.css?v=20260324c" />
   </head>
   <body>
     <div class="shell">
@@ -47,6 +47,9 @@
             >
               打开线上文章
             </a>
+            <button id="preview-window-button" type="button" class="ghost-button" disabled>
+              新窗口预览
+            </button>
             <button id="preview-button" type="button" class="ghost-button" disabled>
               预览效果
             </button>
@@ -187,6 +190,7 @@
           </label>
         </div>
 
+        <p class="modal-note">支持中文 slug，会自动去掉空格和常见标点，你也可以手动改。</p>
         <div id="draft-modal-status" class="draft-modal-status"></div>
 
         <div class="modal-actions">
@@ -197,6 +201,6 @@
       </section>
     </div>
 
-    <script type="module" src="/admin/app.js?v=20260324b"></script>
+    <script type="module" src="/admin/app.js?v=20260324c"></script>
   </body>
 </html>

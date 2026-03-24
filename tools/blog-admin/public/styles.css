@@ -540,6 +540,13 @@ body {
   font-size: 0.92rem;
 }
 
+.modal-note {
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
 .modal-actions {
   justify-content: flex-end;
   margin-top: 1rem;
@@ -580,6 +587,12 @@ body {
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
+}
+
+.ghost-link[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .ghost-button:hover,

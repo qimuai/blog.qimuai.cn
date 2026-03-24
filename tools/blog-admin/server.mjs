@@ -89,9 +89,28 @@ async function readRequestBody(req) {
 
 function getSafeSlug(rawSlug) {
   if (typeof rawSlug !== "string") return null;
-  const slug = rawSlug.trim().replace(/\.md$/i, "");
+  let slug = rawSlug.trim();
+
+  try {
+    slug = decodeURIComponent(slug);
+  } catch {
+    return null;
+  }
+
+  slug = slug
+    .replace(/\.md$/i, "")
+    .normalize("NFKC")
+    .replace(/[’'`"]/g, "")
+    .replace(/[。！？、，：；（）【】《》〈〉「」『』]/g, " ")
+    .replace(/[^\p{Letter}\p{Number}\s-]+/gu, " ")
+    .trim()
+    .replace(/[A-Z]/g, letter => letter.toLowerCase())
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
   if (!slug) return null;
-  if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) return null;
+  if (!/^[\p{Letter}\p{Number}][\p{Letter}\p{Number}-]*$/u.test(slug)) return null;
   return slug;
 }
 
@@ -100,7 +119,7 @@ function getPostFilePath(slug) {
 }
 
 function getPublicPostUrl(slug) {
-  return `${siteBaseUrl.replace(/\/$/, "")}/posts/${slug}/`;
+  return `${siteBaseUrl.replace(/\/$/, "")}/posts/${encodeURIComponent(slug)}/`;
 }
 
 function extractFrontmatterBlock(rawContent) {

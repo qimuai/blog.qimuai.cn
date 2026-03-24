@@ -8,6 +8,7 @@ const refreshButtonElement = document.getElementById("refresh-button");
 const createButtonElement = document.getElementById("create-button");
 const saveButtonElement = document.getElementById("save-button");
 const previewButtonElement = document.getElementById("preview-button");
+const previewWindowButtonElement = document.getElementById("preview-window-button");
 const editorTextareaElement = document.getElementById("editor-textarea");
 const openPostLinkElement = document.getElementById("open-post-link");
 const metaTitleElement = document.getElementById("meta-title");
@@ -32,6 +33,7 @@ const draftCancelButtonElement = document.getElementById("draft-cancel-button");
 const draftConfirmButtonElement = document.getElementById("draft-confirm-button");
 
 const apiBasePath = "/admin/api/posts";
+const previewStoragePrefix = "blog-admin:preview:";
 const managedFrontmatterFields = ["title", "author", "pubDatetime", "description", "draft"];
 const formElements = [
   metaTitleElement,
@@ -62,16 +64,18 @@ function escapeHtml(value) {
 }
 
 function slugifyTitle(title) {
-  const asciiSlug = title
-    .normalize("NFKD")
-    .replace(/[^\w\s-]/g, "")
+  const normalizedSlug = title
+    .normalize("NFKC")
+    .replace(/[’'`"]/g, "")
+    .replace(/[。！？、，：；（）【】《》〈〉「」『』]/g, " ")
+    .replace(/[^\p{Letter}\p{Number}\s-]+/gu, " ")
     .trim()
-    .toLowerCase()
+    .replace(/[A-Z]/g, letter => letter.toLowerCase())
     .replace(/[\s_]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
-  if (asciiSlug) return asciiSlug;
+  if (normalizedSlug) return normalizedSlug;
 
   const now = new Date();
   const timestamp = [
@@ -190,6 +194,63 @@ function setEditorEnabled(enabled) {
   });
   saveButtonElement.disabled = !enabled;
   previewButtonElement.disabled = !enabled;
+  previewWindowButtonElement.disabled = !enabled;
+}
+
+function updateOpenPostLinkState() {
+  if (!selectedPost) {
+    openPostLinkElement.href = "https://blog.qimuai.cn";
+    openPostLinkElement.textContent = "打开线上文章";
+    openPostLinkElement.removeAttribute("aria-disabled");
+    return;
+  }
+
+  const draft = metaDraftElement.checked;
+  if (draft) {
+    openPostLinkElement.href = "#";
+    openPostLinkElement.textContent = "草稿未公开";
+    openPostLinkElement.setAttribute("aria-disabled", "true");
+    return;
+  }
+
+  openPostLinkElement.href = selectedPost.publicUrl;
+  openPostLinkElement.textContent = "打开线上文章";
+  openPostLinkElement.removeAttribute("aria-disabled");
+}
+
+function buildPreviewPayload({ validate = false } = {}) {
+  if (!selectedPost) return null;
+
+  const title = metaTitleElement.value.trim() || "未命名文章";
+  const author = metaAuthorElement.value.trim() || "Aaron";
+  const pubDatetime = getCurrentPubDatetime({ validate });
+  const tags = parseTagsInput(metaTagsElement.value);
+  const draft = metaDraftElement.checked;
+  const metadataBits = [author, pubDatetime];
+
+  if (tags.length) {
+    metadataBits.push(tags.join(" · "));
+  }
+
+  return {
+    slug: metaSlugElement.textContent?.trim() || selectedPost.slug,
+    title,
+    kicker: draft ? "草稿预览" : "文章预览",
+    meta: metadataBits.join(" · "),
+    description: metaDescriptionElement.value.trim(),
+    html: renderMarkdownToHtml(editorTextareaElement.value.trim()),
+    draft,
+    publicUrl: draft ? "" : selectedPost.publicUrl,
+  };
+}
+
+function prunePreviewStorage(limit = 8) {
+  const previewKeys = Object.keys(localStorage)
+    .filter(key => key.startsWith(previewStoragePrefix))
+    .sort();
+
+  const removableKeys = previewKeys.slice(0, Math.max(0, previewKeys.length - limit));
+  removableKeys.forEach(key => localStorage.removeItem(key));
 }
 
 function resetEditor() {
@@ -208,6 +269,7 @@ function resetEditor() {
   metaSlugElement.textContent = "-";
   editorTextareaElement.value = "";
   setEditorEnabled(false);
+  updateOpenPostLinkState();
   closePreview();
   updateDirtyState();
 }
@@ -237,6 +299,8 @@ function updateDirtyState() {
   saveButtonElement.textContent = dirty ? "保存并发布" : "已同步";
   saveButtonElement.disabled = !selectedPost || !dirty;
   previewButtonElement.disabled = !selectedPost;
+  previewWindowButtonElement.disabled = !selectedPost;
+  updateOpenPostLinkState();
 
   if (previewOpen) {
     renderPreview();
@@ -435,24 +499,15 @@ function renderMarkdownToHtml(markdown) {
 }
 
 function renderPreview() {
-  if (!selectedPost) return;
+  const payload = buildPreviewPayload();
+  if (!payload) return;
 
-  const tags = parseTagsInput(metaTagsElement.value);
-  const metadataBits = [
-    metaAuthorElement.value.trim() || "Aaron",
-    metaPubDatetimeElement.value.trim() || "未填写发布时间",
-  ];
-
-  if (tags.length) {
-    metadataBits.push(tags.join(" · "));
-  }
-
-  previewKickerElement.textContent = metaDraftElement.checked ? "草稿预览" : "文章预览";
-  previewTitleElement.textContent = metaTitleElement.value.trim() || "未命名文章";
-  previewMetaElement.textContent = metadataBits.join(" · ");
-  previewDescriptionElement.textContent = metaDescriptionElement.value.trim();
-  previewDescriptionElement.hidden = !previewDescriptionElement.textContent;
-  previewContentElement.innerHTML = renderMarkdownToHtml(editorTextareaElement.value.trim());
+  previewKickerElement.textContent = payload.kicker;
+  previewTitleElement.textContent = payload.title;
+  previewMetaElement.textContent = payload.meta;
+  previewDescriptionElement.textContent = payload.description;
+  previewDescriptionElement.hidden = !payload.description;
+  previewContentElement.innerHTML = payload.html;
 }
 
 function openPreview() {
@@ -468,6 +523,30 @@ function closePreview() {
   previewOpen = false;
   previewPanelElement.hidden = true;
   previewButtonElement.textContent = "预览效果";
+}
+
+function openPreviewWindow() {
+  if (!selectedPost) return;
+
+  try {
+    const payload = buildPreviewPayload({ validate: true });
+    const previewId = `${Date.now()}-${payload.slug}`;
+    prunePreviewStorage();
+    localStorage.setItem(`${previewStoragePrefix}${previewId}`, JSON.stringify(payload));
+    const previewUrl = `/admin/preview.html?preview=${encodeURIComponent(previewId)}`;
+    const previewWindow = window.open(previewUrl, "_blank");
+
+    if (!previewWindow) {
+      setStatus("浏览器拦住了新窗口，请允许弹窗后再试。", "error");
+      return;
+    }
+
+    previewWindow.opener = null;
+
+    setStatus("已在新标签打开预览页。", "success");
+  } catch (error) {
+    setStatus(error.message || "打开预览页失败", "error");
+  }
 }
 
 function populateEditor(post) {
@@ -489,8 +568,8 @@ function populateEditor(post) {
     post.pubDatetime || "未填写发布时间",
     post.draft ? "当前是草稿" : "已发布文章",
   ].join(" | ");
-  openPostLinkElement.href = post.publicUrl;
   setEditorEnabled(true);
+  updateOpenPostLinkState();
   lastSerializedContent = serializeCurrentPost();
   updateDirtyState();
   renderPostList();
@@ -608,6 +687,7 @@ refreshButtonElement.addEventListener("click", () => loadPosts(selectedPost?.slu
 createButtonElement.addEventListener("click", openDraftModal);
 saveButtonElement.addEventListener("click", saveCurrentPost);
 previewButtonElement.addEventListener("click", openPreview);
+previewWindowButtonElement.addEventListener("click", openPreviewWindow);
 previewCloseButtonElement.addEventListener("click", closePreview);
 draftCancelButtonElement.addEventListener("click", closeDraftModal);
 draftConfirmButtonElement.addEventListener("click", createDraftPost);

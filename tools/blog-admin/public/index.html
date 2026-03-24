@@ -118,10 +118,19 @@
                   <span>保存为草稿</span>
                 </label>
 
-                <div class="meta-readonly">
+                <label class="meta-field meta-field-full">
                   <span>Slug</span>
-                  <code id="meta-slug">-</code>
-                </div>
+                  <input
+                    id="meta-slug"
+                    type="text"
+                    placeholder="文章地址标识，可改成更短更清晰的形式"
+                    disabled
+                    spellcheck="false"
+                  />
+                  <small class="meta-help">
+                    改 slug 时会自动保留旧地址跳转，评论讨论也会在下次部署时跟着迁移。
+                  </small>
+                </label>
               </div>
             </article>
           </section>

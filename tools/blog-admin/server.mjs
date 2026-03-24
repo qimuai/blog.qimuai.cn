@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -122,9 +122,21 @@ function getPublicPostUrl(slug) {
   return `${siteBaseUrl.replace(/\/$/, "")}/posts/${encodeURIComponent(slug)}/`;
 }
 
-function extractFrontmatterBlock(rawContent) {
+function splitRawContent(rawContent) {
   const match = rawContent.match(/^---\n([\s\S]*?)\n---\n?/);
-  return match?.[1] ?? "";
+
+  if (!match) {
+    return { frontmatter: "", body: rawContent };
+  }
+
+  return {
+    frontmatter: match[1],
+    body: rawContent.slice(match[0].length),
+  };
+}
+
+function extractFrontmatterBlock(rawContent) {
+  return splitRawContent(rawContent).frontmatter;
 }
 
 function extractField(frontmatter, fieldName) {
@@ -158,6 +170,46 @@ function extractTags(frontmatter) {
     .map(line => line.replace(/^\s*-\s*/, "").trim())
     .filter(Boolean)
     .map(tag => tag.replace(/^['"]|['"]$/g, ""));
+}
+
+function extractLegacyPaths(frontmatter) {
+  const inlineMatch = frontmatter.match(/^legacyPaths:\s*\[(.*)\]\s*$/m);
+  if (inlineMatch) {
+    return inlineMatch[1]
+      .split(",")
+      .map(item => item.trim().replace(/^['"]|['"]$/g, ""))
+      .filter(Boolean);
+  }
+
+  const blockMatch = frontmatter.match(/^legacyPaths:\s*\n((?:\s*-\s*.+\n?)*)/m);
+  if (!blockMatch) return [];
+
+  return blockMatch[1]
+    .split("\n")
+    .map(line => line.replace(/^\s*-\s*/, "").trim())
+    .filter(Boolean)
+    .map(item => item.replace(/^['"]|['"]$/g, ""));
+}
+
+function addLegacyPath(rawContent, legacyPath) {
+  const { frontmatter, body } = splitRawContent(rawContent);
+  if (!frontmatter) return rawContent;
+
+  const legacyPaths = [...new Set([legacyPath, ...extractLegacyPaths(frontmatter)])];
+  const sanitizedFrontmatter = frontmatter
+    .replace(/^legacyPaths:\s*\[(.*)\]\s*\n?/m, "")
+    .replace(/^legacyPaths:\s*\n(?:\s*-\s*.*\n?)*/m, "")
+    .trim();
+
+  const nextFrontmatter = [
+    sanitizedFrontmatter,
+    "legacyPaths:",
+    ...legacyPaths.map(item => `  - ${yamlString(item)}`),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return `---\n${nextFrontmatter}\n---\n${body}`;
 }
 
 async function readPostFile(slug) {
@@ -215,11 +267,22 @@ async function runGit(args) {
   return { stdout: stdout.trim(), stderr: stderr.trim() };
 }
 
-async function hasStagedChanges(fileRelativePath) {
+async function hasStagedChanges(fileRelativePaths = []) {
+  const files = Array.isArray(fileRelativePaths)
+    ? fileRelativePaths.filter(Boolean)
+    : [fileRelativePaths].filter(Boolean);
+
   try {
     await execFileAsync(
       "git",
-      ["-C", repoDir, "diff", "--cached", "--quiet", "--", fileRelativePath],
+      [
+        "-C",
+        repoDir,
+        "diff",
+        "--cached",
+        "--quiet",
+        ...(files.length ? ["--", ...files] : []),
+      ],
       {
         env: getGitEnv(),
       }
@@ -237,9 +300,13 @@ async function syncRepo() {
   await runGit(["pull", "--ff-only", remote, branch]);
 }
 
-async function commitAndPush(fileRelativePath, commitMessage) {
-  await runGit(["add", fileRelativePath]);
-  if (!(await hasStagedChanges(fileRelativePath))) {
+async function commitAndPush(fileRelativePaths, commitMessage) {
+  const files = Array.isArray(fileRelativePaths)
+    ? fileRelativePaths.filter(Boolean)
+    : [fileRelativePaths].filter(Boolean);
+
+  await runGit(["add", "-A", "--", ...files]);
+  if (!(await hasStagedChanges(files))) {
     const { stdout } = await runGit(["rev-parse", "--short", "HEAD"]);
     return { changed: false, commitSha: stdout };
   }
@@ -330,9 +397,15 @@ async function handleCreatePost(req, res) {
 async function handleSavePost(req, res, slug) {
   const body = await readRequestBody(req);
   const rawContent = typeof body.rawContent === "string" ? body.rawContent : "";
+  const nextSlug = getSafeSlug(body.nextSlug ?? slug);
 
   if (!rawContent.trim().startsWith("---")) {
     sendJson(res, 400, { error: "文章内容需要保留 frontmatter 开头的 ---" });
+    return;
+  }
+
+  if (!nextSlug) {
+    sendJson(res, 400, { error: "请提供合法的 slug" });
     return;
   }
 
@@ -341,19 +414,44 @@ async function handleSavePost(req, res, slug) {
     return;
   }
 
-  const filePath = getPostFilePath(slug);
-  const fileRelativePath = path.relative(repoDir, filePath);
+  const currentFilePath = getPostFilePath(slug);
+  const targetFilePath = getPostFilePath(nextSlug);
+  const currentFileRelativePath = path.relative(repoDir, currentFilePath);
+  const targetFileRelativePath = path.relative(repoDir, targetFilePath);
 
   saveState.inProgress = true;
 
   try {
     await syncRepo();
-    await writeFile(filePath, rawContent, "utf8");
-    const result = await commitAndPush(
-      fileRelativePath,
-      `docs: update article ${slug}`
-    );
-    const post = await readPostFile(slug);
+
+    if (slug !== nextSlug) {
+      try {
+        await stat(targetFilePath);
+        sendJson(res, 409, { error: "目标 slug 已存在同名文章" });
+        return;
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+      }
+    }
+
+    const finalRawContent =
+      slug === nextSlug ? rawContent : addLegacyPath(rawContent, `/posts/${slug}`);
+
+    if (slug !== nextSlug) {
+      await rename(currentFilePath, targetFilePath);
+    }
+
+    await writeFile(targetFilePath, finalRawContent, "utf8");
+    const commitFiles =
+      slug === nextSlug
+        ? [targetFileRelativePath]
+        : [currentFileRelativePath, targetFileRelativePath];
+    const commitMessage =
+      slug === nextSlug
+        ? `docs: update article ${nextSlug}`
+        : `docs: rename article ${slug} to ${nextSlug}`;
+    const result = await commitAndPush(commitFiles, commitMessage);
+    const post = await readPostFile(nextSlug);
 
     sendJson(res, 200, { post, ...result });
   } finally {

@@ -42,6 +42,7 @@ const formElements = [
   metaTagsElement,
   metaDescriptionElement,
   metaDraftElement,
+  metaSlugElement,
   editorTextareaElement,
 ];
 
@@ -150,6 +151,25 @@ function getCurrentPubDatetime({ validate = false } = {}) {
   throw new Error("发布时间格式不正确，请使用 2026-03-24T10:00:00+08:00 这样的格式");
 }
 
+function getCurrentSlug({ validate = false } = {}) {
+  const rawSlug = metaSlugElement.value.trim() || selectedPost?.slug || "";
+  const normalizedSlug = slugifyTitle(rawSlug);
+
+  if (normalizedSlug) {
+    return normalizedSlug;
+  }
+
+  if (validate) {
+    throw new Error("请填写有效的 slug");
+  }
+
+  return "";
+}
+
+function getPublicPostUrl(slug) {
+  return `https://blog.qimuai.cn/posts/${encodeURIComponent(slug)}/`;
+}
+
 function serializeCurrentPost({ validate = false } = {}) {
   const title = metaTitleElement.value.trim() || selectedPost?.title || "";
   const author = metaAuthorElement.value.trim() || selectedPost?.author || "Aaron";
@@ -206,6 +226,8 @@ function updateOpenPostLinkState() {
   }
 
   const draft = metaDraftElement.checked;
+  const currentSlug = getCurrentSlug();
+
   if (draft) {
     openPostLinkElement.href = "#";
     openPostLinkElement.textContent = "草稿未公开";
@@ -213,7 +235,21 @@ function updateOpenPostLinkState() {
     return;
   }
 
-  openPostLinkElement.href = selectedPost.publicUrl;
+  if (!currentSlug) {
+    openPostLinkElement.href = "#";
+    openPostLinkElement.textContent = "请填写 slug";
+    openPostLinkElement.setAttribute("aria-disabled", "true");
+    return;
+  }
+
+  if (currentSlug !== selectedPost.slug) {
+    openPostLinkElement.href = "#";
+    openPostLinkElement.textContent = "保存后新地址生效";
+    openPostLinkElement.setAttribute("aria-disabled", "true");
+    return;
+  }
+
+  openPostLinkElement.href = getPublicPostUrl(currentSlug);
   openPostLinkElement.textContent = "打开线上文章";
   openPostLinkElement.removeAttribute("aria-disabled");
 }
@@ -221,6 +257,7 @@ function updateOpenPostLinkState() {
 function buildPreviewPayload({ validate = false } = {}) {
   if (!selectedPost) return null;
 
+  const slug = getCurrentSlug({ validate });
   const title = metaTitleElement.value.trim() || "未命名文章";
   const author = metaAuthorElement.value.trim() || "Aaron";
   const pubDatetime = getCurrentPubDatetime({ validate });
@@ -233,14 +270,15 @@ function buildPreviewPayload({ validate = false } = {}) {
   }
 
   return {
-    slug: metaSlugElement.textContent?.trim() || selectedPost.slug,
+    slug,
     title,
     kicker: draft ? "草稿预览" : "文章预览",
     meta: metadataBits.join(" · "),
     description: metaDescriptionElement.value.trim(),
     html: renderMarkdownToHtml(editorTextareaElement.value.trim()),
     draft,
-    publicUrl: draft ? "" : selectedPost.publicUrl,
+    publicUrl:
+      draft || slug !== selectedPost.slug ? "" : getPublicPostUrl(slug),
   };
 }
 
@@ -266,7 +304,7 @@ function resetEditor() {
   metaTagsElement.value = "";
   metaDescriptionElement.value = "";
   metaDraftElement.checked = false;
-  metaSlugElement.textContent = "-";
+  metaSlugElement.value = "";
   editorTextareaElement.value = "";
   setEditorEnabled(false);
   updateOpenPostLinkState();
@@ -295,7 +333,8 @@ function getFilteredPosts() {
 }
 
 function updateDirtyState() {
-  const dirty = selectedPost && serializeCurrentPost() !== lastSerializedContent;
+  const slugDirty = selectedPost && getCurrentSlug() !== selectedPost.slug;
+  const dirty = selectedPost && (serializeCurrentPost() !== lastSerializedContent || slugDirty);
   saveButtonElement.textContent = dirty ? "保存并发布" : "已同步";
   saveButtonElement.disabled = !selectedPost || !dirty;
   previewButtonElement.disabled = !selectedPost;
@@ -560,7 +599,7 @@ function populateEditor(post) {
   metaTagsElement.value = Array.isArray(post.tags) ? post.tags.join(", ") : "";
   metaDescriptionElement.value = post.description || "";
   metaDraftElement.checked = Boolean(post.draft);
-  metaSlugElement.textContent = post.slug;
+  metaSlugElement.value = post.slug;
   editorTextareaElement.value = body;
   editorTitleElement.textContent = post.title;
   editorMetaElement.textContent = [
@@ -595,7 +634,7 @@ async function loadPosts(selectSlug) {
 
 async function loadPost(slug) {
   setStatus("正在载入文章内容…", "info");
-  const data = await apiFetch(`${apiBasePath}/${slug}`);
+  const data = await apiFetch(`${apiBasePath}/${encodeURIComponent(slug)}`);
   populateEditor(data.post);
   setStatus(`已载入《${data.post.title}》。`, "success");
 }
@@ -608,9 +647,10 @@ async function saveCurrentPost() {
 
   try {
     const rawContent = serializeCurrentPost({ validate: true });
-    const data = await apiFetch(`${apiBasePath}/${selectedPost.slug}`, {
+    const nextSlug = getCurrentSlug({ validate: true });
+    const data = await apiFetch(`${apiBasePath}/${encodeURIComponent(selectedPost.slug)}`, {
       method: "POST",
-      body: JSON.stringify({ rawContent }),
+      body: JSON.stringify({ rawContent, nextSlug }),
     });
 
     populateEditor(data.post);
@@ -705,6 +745,13 @@ draftTitleInputElement.addEventListener("input", () => {
 
 draftSlugInputElement.addEventListener("input", () => {
   slugTouched = true;
+});
+
+metaSlugElement.addEventListener("input", () => {
+  const normalizedSlug = slugifyTitle(metaSlugElement.value);
+  if (metaSlugElement.value !== normalizedSlug) {
+    metaSlugElement.value = normalizedSlug;
+  }
 });
 
 formElements.forEach(element => {

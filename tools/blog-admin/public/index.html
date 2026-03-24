@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Qimuai Blog 后台</title>
-    <link rel="stylesheet" href="/admin/styles.css?v=20260324d" />
+    <link rel="stylesheet" href="/admin/styles.css?v=20260324e" />
   </head>
   <body>
     <div id="shell" class="shell">
@@ -41,11 +41,38 @@
           </div>
 
           <div class="editor-actions">
-            <button id="sidebar-toggle-button" type="button" class="ghost-button">
-              隐藏文章列表
+            <button
+              id="sidebar-toggle-button"
+              type="button"
+              class="ghost-button icon-action-button"
+              title="隐藏文章列表"
+              aria-label="隐藏文章列表"
+            >
+              <span class="button-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3.5" y="4.5" width="17" height="15" rx="2.5"></rect>
+                  <path d="M9 5v14"></path>
+                </svg>
+              </span>
+              <span id="sidebar-toggle-label" class="button-label">文章列表</span>
             </button>
-            <button id="focus-mode-button" type="button" class="ghost-button" disabled>
-              全屏编辑
+            <button
+              id="focus-mode-button"
+              type="button"
+              class="ghost-button icon-action-button"
+              title="进入专注编辑"
+              aria-label="进入专注编辑"
+              disabled
+            >
+              <span class="button-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M8 4H4v4"></path>
+                  <path d="M16 4h4v4"></path>
+                  <path d="M20 16v4h-4"></path>
+                  <path d="M4 16v4h4"></path>
+                </svg>
+              </span>
+              <span id="focus-mode-label" class="button-label">专注编辑</span>
             </button>
             <a
               id="open-post-link"
@@ -151,41 +178,191 @@
                 <p class="body-panel-note">支持常用格式按钮，也会自动保存在当前浏览器。</p>
               </div>
               <div class="markdown-toolbar" role="toolbar" aria-label="Markdown 工具栏">
-                <button type="button" class="toolbar-button" data-md-action="bold" disabled>
-                  加粗
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="bold"
+                  title="加粗"
+                  aria-label="加粗"
+                  disabled
+                >
+                  <span class="toolbar-symbol toolbar-text-symbol" aria-hidden="true">B</span>
+                  <span class="sr-only">加粗</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="italic" disabled>
-                  斜体
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="italic"
+                  title="斜体"
+                  aria-label="斜体"
+                  disabled
+                >
+                  <span class="toolbar-symbol toolbar-text-symbol toolbar-text-italic" aria-hidden="true">I</span>
+                  <span class="sr-only">斜体</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="h2" disabled>
-                  H2
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="h2"
+                  title="二级标题"
+                  aria-label="二级标题"
+                  disabled
+                >
+                  <span class="toolbar-symbol toolbar-text-symbol toolbar-heading-symbol" aria-hidden="true">H2</span>
+                  <span class="sr-only">二级标题</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="h3" disabled>
-                  H3
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="h3"
+                  title="三级标题"
+                  aria-label="三级标题"
+                  disabled
+                >
+                  <span class="toolbar-symbol toolbar-text-symbol toolbar-heading-symbol" aria-hidden="true">H3</span>
+                  <span class="sr-only">三级标题</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="link" disabled>
-                  链接
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="link"
+                  title="链接"
+                  aria-label="链接"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M10 14 8.5 15.5a3.5 3.5 0 0 1-5-5L7 7"></path>
+                      <path d="m14 10 1.5-1.5a3.5 3.5 0 1 1 5 5L17 17"></path>
+                      <path d="M8 12h8"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">链接</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="quote" disabled>
-                  引用
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="quote"
+                  title="引用"
+                  aria-label="引用"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M9 8H6.5A2.5 2.5 0 0 0 4 10.5v1A2.5 2.5 0 0 0 6.5 14H9V8Z"></path>
+                      <path d="M20 8h-2.5A2.5 2.5 0 0 0 15 10.5v1a2.5 2.5 0 0 0 2.5 2.5H20V8Z"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">引用</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="ul" disabled>
-                  列表
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="ul"
+                  title="无序列表"
+                  aria-label="无序列表"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <circle cx="5.5" cy="7" r="1"></circle>
+                      <circle cx="5.5" cy="12" r="1"></circle>
+                      <circle cx="5.5" cy="17" r="1"></circle>
+                      <path d="M9 7h10"></path>
+                      <path d="M9 12h10"></path>
+                      <path d="M9 17h10"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">无序列表</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="ol" disabled>
-                  编号
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="ol"
+                  title="有序列表"
+                  aria-label="有序列表"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M4 7h2"></path>
+                      <path d="M4 12h2"></path>
+                      <path d="M4 17h2"></path>
+                      <path d="M9 7h10"></path>
+                      <path d="M9 12h10"></path>
+                      <path d="M9 17h10"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">有序列表</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="code" disabled>
-                  行内代码
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="code"
+                  title="行内代码"
+                  aria-label="行内代码"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="m9 8-4 4 4 4"></path>
+                      <path d="m15 8 4 4-4 4"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">行内代码</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="codeblock" disabled>
-                  代码块
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="codeblock"
+                  title="代码块"
+                  aria-label="代码块"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M5 6h14"></path>
+                      <path d="M5 18h14"></path>
+                      <path d="M7 9v6"></path>
+                      <path d="M17 9v6"></path>
+                      <path d="m10 10 2 2-2 2"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">代码块</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="image" disabled>
-                  图片
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="image"
+                  title="图片"
+                  aria-label="图片"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+                      <circle cx="9" cy="10" r="1.5"></circle>
+                      <path d="m20 15-4-4-6 6"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">图片</span>
                 </button>
-                <button type="button" class="toolbar-button" data-md-action="divider" disabled>
-                  分隔线
+                <button
+                  type="button"
+                  class="toolbar-button"
+                  data-md-action="divider"
+                  title="分隔线"
+                  aria-label="分隔线"
+                  disabled
+                >
+                  <span class="toolbar-symbol" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M4 12h16"></path>
+                      <path d="M10 9h4"></path>
+                      <path d="M10 15h4"></path>
+                    </svg>
+                  </span>
+                  <span class="sr-only">分隔线</span>
                 </button>
               </div>
             </div>
@@ -262,6 +439,6 @@
       </section>
     </div>
 
-    <script type="module" src="/admin/app.js?v=20260324d"></script>
+    <script type="module" src="/admin/app.js?v=20260324e"></script>
   </body>
 </html>

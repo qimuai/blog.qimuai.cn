@@ -12,7 +12,9 @@ const saveButtonElement = document.getElementById("save-button");
 const previewButtonElement = document.getElementById("preview-button");
 const previewWindowButtonElement = document.getElementById("preview-window-button");
 const sidebarToggleButtonElement = document.getElementById("sidebar-toggle-button");
+const sidebarToggleLabelElement = document.getElementById("sidebar-toggle-label");
 const focusModeButtonElement = document.getElementById("focus-mode-button");
+const focusModeLabelElement = document.getElementById("focus-mode-label");
 const editorTextareaElement = document.getElementById("editor-textarea");
 const openPostLinkElement = document.getElementById("open-post-link");
 const metaTitleElement = document.getElementById("meta-title");
@@ -203,10 +205,19 @@ function saveUiPreferences() {
 function applyShellState() {
   shellElement.classList.toggle("sidebar-collapsed", sidebarCollapsed);
   shellElement.classList.toggle("focus-mode", focusMode);
-  sidebarToggleButtonElement.textContent = sidebarCollapsed ? "显示文章列表" : "隐藏文章列表";
-  focusModeButtonElement.textContent = focusMode ? "退出全屏" : "全屏编辑";
+  const sidebarLabel = sidebarCollapsed ? "显示列表" : "文章列表";
+  const sidebarAction = sidebarCollapsed ? "显示文章列表" : "隐藏文章列表";
+  const focusLabel = focusMode ? "退出专注" : "专注编辑";
+  const focusAction = focusMode ? "退出全屏编辑" : "进入专注编辑";
+
+  sidebarToggleLabelElement.textContent = sidebarLabel;
+  focusModeLabelElement.textContent = focusLabel;
   focusModeButtonElement.classList.toggle("is-active", focusMode);
   sidebarToggleButtonElement.disabled = focusMode;
+  sidebarToggleButtonElement.setAttribute("title", sidebarAction);
+  sidebarToggleButtonElement.setAttribute("aria-label", sidebarAction);
+  focusModeButtonElement.setAttribute("title", focusAction);
+  focusModeButtonElement.setAttribute("aria-label", focusAction);
   sidebarToggleButtonElement.setAttribute("aria-pressed", sidebarCollapsed ? "true" : "false");
   focusModeButtonElement.setAttribute("aria-pressed", focusMode ? "true" : "false");
 }
